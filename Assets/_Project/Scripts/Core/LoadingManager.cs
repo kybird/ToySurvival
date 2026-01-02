@@ -14,7 +14,6 @@ public class LoadingManager : MonoBehaviour
     [SerializeField] private Text messageText;
     [SerializeField] private Slider progressBar;
 
-    private bool _isCreatedDynamically = false;
 
     void Awake()
     {
@@ -42,7 +41,6 @@ public class LoadingManager : MonoBehaviour
     /// </summary>
     private void CreateLoadingUI()
     {
-        _isCreatedDynamically = true;
 
         // Canvas 생성
         GameObject canvasGO = new GameObject("LoadingCanvas");

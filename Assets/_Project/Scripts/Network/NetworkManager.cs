@@ -18,7 +18,13 @@ public class NetworkManager : MonoBehaviour
     public bool IsConnected { get; private set; } = false;
     public int MyPlayerId { get; set; }
     public float MapWidth { get; set; }
+
     public float MapHeight { get; set; }
+    
+    // 서버에서 S_Login으로 받아올 Tick 설정 (기본값은 GameConstants 사용)
+    public int ServerTickRate { get; set; } = GameConstants.TICK_RATE;
+    public float ServerTickInterval { get; set; } = GameConstants.SERVER_DT;
+
     public Action OnConnected { get; set; }
     public Action OnDisconnected { get; set; }
 
@@ -61,6 +67,14 @@ public class NetworkManager : MonoBehaviour
             GameObject go = new GameObject("GameManager");
             go.AddComponent<GameManager>();
             Debug.Log("[NetworkManager] GameManager created");
+        }
+
+        // TickManager (필수!)
+        if (TickManager.Instance == null)
+        {
+            GameObject go = new GameObject("TickManager");
+            go.AddComponent<TickManager>();
+            Debug.Log("[NetworkManager] TickManager created");
         }
 
         // ObjectManager

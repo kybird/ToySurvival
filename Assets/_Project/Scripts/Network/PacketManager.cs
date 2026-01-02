@@ -51,6 +51,9 @@ namespace Network
 
             _onRecv.Add((ushort)Protocol.MsgId.SPing, MakePacket<S_Ping>);
             _handler.Add((ushort)Protocol.MsgId.SPing, PacketHandler.Handle_S_Ping);
+
+            _onRecv.Add((ushort)Protocol.MsgId.SPlayerStateAck, MakePacket<S_PlayerStateAck>);
+            _handler.Add((ushort)Protocol.MsgId.SPlayerStateAck, PacketHandler.Handle_S_PlayerStateAck);
         }
 
         public void OnRecvPacket(ArraySegment<byte> buffer, Action<IMessage> onRecvCallback = null)

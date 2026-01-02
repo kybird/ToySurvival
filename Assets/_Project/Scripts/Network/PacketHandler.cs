@@ -18,6 +18,23 @@ public class PacketHandler
             NetworkManager.Instance.MyPlayerId = res.MyPlayerId;
             NetworkManager.Instance.MapWidth = res.MapWidth;
             NetworkManager.Instance.MapHeight = res.MapHeight;
+            
+            Debug.Log($"[PacketHandler] MyPlayerId SET to: {NetworkManager.Instance.MyPlayerId}");
+
+            // 동적 서버 Tick 설정 저장
+            if (res.ServerTickRate > 0)
+            {
+                NetworkManager.Instance.ServerTickRate = (int)res.ServerTickRate;
+                NetworkManager.Instance.ServerTickInterval = res.ServerTickInterval;
+                
+                // TickManager 초기화
+                if (TickManager.Instance != null)
+                {
+                    TickManager.Instance.Initialize(res.ServerTickInterval);
+                }
+                
+                Debug.Log($"[PacketHandler] Server Config Sync: {res.ServerTickRate} TPS, {res.ServerTickInterval:F4}s interval");
+            }
 
             // GameManager를 통한 상태 전이
             GameManager.Instance.TriggerEvent(StateEvent.LoginSuccess);
@@ -76,9 +93,64 @@ public class PacketHandler
         S_MoveObjectBatch res = (S_MoveObjectBatch)packet;
         if (ObjectManager.Instance == null) return;
 
+        // Tick 동기화 (hard / soft 분기)
+        if (TickManager.Instance != null)
+        {
+            if (!TickManager.Instance.IsSynced)
+            {
+                // 첫 패킷: hard sync
+                TickManager.Instance.SyncWithServer(res.ServerTick);
+            }
+            else
+            {
+                // 이후 패킷: soft sync (미세 재동기화)
+                TickManager.Instance.ResyncWithServer(res.ServerTick);
+            }
+        }
+
+        // 배치 패킷 처리 (무조건 로컬 플레이어 제외)
         foreach (ObjectPos pos in res.Moves)
         {
-            ObjectManager.Instance.UpdatePos(pos);
+            // CRITICAL: LocalPlayer는 절대 배치 패킷으로 이동시키지 않음 (Client-Side Prediction 사용)
+            if (pos.ObjectId == NetworkManager.Instance.MyPlayerId)
+                continue;
+
+            ObjectManager.Instance.UpdatePos(pos, res.ServerTick);
+        }
+    }
+
+    public static void Handle_S_PlayerStateAck(IMessage packet)
+    {
+        S_PlayerStateAck res = (S_PlayerStateAck)packet;
+        
+        Debug.Log($"[PacketHandler] S_PlayerStateAck received! ServerTick: {res.ServerTick}, Pos: ({res.X}, {res.Y})");
+        
+        // Tick 동기화 (PlayerStateAck도 서버 시각을 포함하므로 동기화 소스로 활용)
+        if (TickManager.Instance != null)
+        {
+            if (!TickManager.Instance.IsSynced)
+            {
+                TickManager.Instance.SyncWithServer(res.ServerTick);
+            }
+            else
+            {
+                TickManager.Instance.ResyncWithServer(res.ServerTick);
+            }
+        }
+
+        // 서버의 위치 보정/검증 패킷
+        if (ObjectManager.Instance != null)
+        {
+            // 로컬 플레이어 객체 찾기
+           GameObject myPlayer =  ObjectManager.Instance.GetMyPlayer(); 
+           if (myPlayer != null)
+           {
+               ClientSidePredictionController csp = myPlayer.GetComponent<ClientSidePredictionController>();
+               if (csp != null)
+               {
+                   csp.OnServerCorrection(res.X, res.Y, res.ServerTick);
+               }
+           }
         }
     }
 
