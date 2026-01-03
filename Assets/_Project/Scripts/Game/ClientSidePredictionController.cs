@@ -11,6 +11,14 @@ public class ClientSidePredictionController : MonoBehaviour
     public float moveSpeed = 5.0f;
     public float sendInterval = 0.1f; // 100ms
 
+    private void UpdateHistorySize()
+    {
+        if (TickManager.Instance != null && TickManager.Instance.TickRate > 0)
+        {
+            _maxHistorySize = TickManager.Instance.TickRate * 2; // 2초 버퍼
+        }
+    }
+
     private float _lastSendTime = 0;
     private Vector2 _lastDir = Vector2.zero;
     private Vector2 _inputDirection;
@@ -22,11 +30,12 @@ public class ClientSidePredictionController : MonoBehaviour
         public Vector2 position;
     }
     private Queue<PositionHistory> _positionHistory = new Queue<PositionHistory>();
-    private const int MAX_HISTORY_SIZE = 60; // 2초 분량 (30 TPS)
+    private int _maxHistorySize = 120; // 기본 120. TickManager 초기화 후 (TickRate * 2초)로 재설정 권장
 
     private void Start()
     {
         Debug.Log("[CSP] Start() called");
+        UpdateHistorySize();
         var playerInput = GetComponent<PlayerInput>();
         if (playerInput != null)
         {
@@ -44,9 +53,11 @@ public class ClientSidePredictionController : MonoBehaviour
             Debug.LogError("[CSP] PlayerInput component NOT FOUND!");
         }
         
-        // 서버와 동일한 고정 타임스텝 설정 (30 TPS = 0.0333초)
-        Time.fixedDeltaTime = 1.0f / 30.0f;
-        Debug.Log($"[CSP] Fixed timestep set to {Time.fixedDeltaTime:F4}s (30 TPS)");
+        // 서버와 동일한 고정 타임스텝 설정 
+        // TickManager에서 S_Login 시점에 이미 설정됨
+        // Time.fixedDeltaTime = 1.0f / 30.0f; // REMOVED
+        
+        Debug.Log($"[CSP] Fixed timestep is {Time.fixedDeltaTime:F4}s");
     }
 
     public void OnMove(InputValue value)
@@ -78,7 +89,7 @@ public class ClientSidePredictionController : MonoBehaviour
         // 이동 후 위치 기록 (Server Reconciliation용)
         if (TickManager.Instance != null)
         {
-            uint currentTick = (uint)TickManager.Instance.GetCurrentTick();
+            uint currentTick = (uint)TickManager.Instance.GetPredictionTick();
             Vector2 currentPos = new Vector2(transform.position.x, transform.position.y);
             
             _positionHistory.Enqueue(new PositionHistory 
@@ -88,7 +99,7 @@ public class ClientSidePredictionController : MonoBehaviour
             });
             
             // 오래된 기록 제거
-            while (_positionHistory.Count > MAX_HISTORY_SIZE)
+            while (_positionHistory.Count > _maxHistorySize)
             {
                 _positionHistory.Dequeue();
             }
@@ -183,7 +194,7 @@ public class ClientSidePredictionController : MonoBehaviour
         
         if (TickManager.Instance != null)
         {
-            pkt.ClientTick = (uint)TickManager.Instance.GetCurrentTick();
+            pkt.ClientTick = (uint)TickManager.Instance.GetPredictionTick();
         }
 
         NetworkManager.Instance.Send(pkt);
@@ -262,6 +273,7 @@ public class ClientSidePredictionController : MonoBehaviour
             float y = transform.position.y;
             
             string debugText = $"[CSP] ID: {NetworkManager.Instance.MyPlayerId}\n" +
+                               $"RTT: {NetworkManager.Instance.RTT}ms\n" +
                                $"Pos: ({x:F1}, {y:F1})";
             InGameUI.Instance.SetDebugText(debugText);
         }

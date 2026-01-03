@@ -54,6 +54,12 @@ namespace Network
 
             _onRecv.Add((ushort)Protocol.MsgId.SPlayerStateAck, MakePacket<S_PlayerStateAck>);
             _handler.Add((ushort)Protocol.MsgId.SPlayerStateAck, PacketHandler.Handle_S_PlayerStateAck);
+
+            _onRecv.Add((ushort)Protocol.MsgId.SPong, MakePacket<S_Pong>);
+            _handler.Add((ushort)Protocol.MsgId.SPong, PacketHandler.Handle_S_Pong);
+
+            _onRecv.Add((ushort)Protocol.MsgId.SDebugServerTick, MakePacket<S_DebugServerTick>);
+            _handler.Add((ushort)Protocol.MsgId.SDebugServerTick, PacketHandler.Handle_S_DebugServerTick);
         }
 
         public void OnRecvPacket(ArraySegment<byte> buffer, Action<IMessage> onRecvCallback = null)

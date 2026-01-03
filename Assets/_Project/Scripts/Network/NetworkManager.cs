@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using Network;
 using UnityEngine;
 using Core;
+using Protocol;
 
 public class NetworkManager : MonoBehaviour
 {
@@ -22,8 +23,8 @@ public class NetworkManager : MonoBehaviour
     public float MapHeight { get; set; }
     
     // 서버에서 S_Login으로 받아올 Tick 설정 (기본값은 GameConstants 사용)
-    public int ServerTickRate { get; set; } = GameConstants.TICK_RATE;
-    public float ServerTickInterval { get; set; } = GameConstants.SERVER_DT;
+    public int ServerTickRate { get; set; } = GameConstants.DEFAULT_TICK_RATE;
+    public float ServerTickInterval { get; set; } = GameConstants.DEFAULT_SERVER_DT;
 
     public Action OnConnected { get; set; }
     public Action OnDisconnected { get; set; }
@@ -164,6 +165,8 @@ public class NetworkManager : MonoBehaviour
         _isConnecting = false;
         _isRetrying = false;
         OnConnected?.Invoke();
+        
+        StartCoroutine(CoSendPing());
     }
 
     void HandleDisconnected()
@@ -172,6 +175,8 @@ public class NetworkManager : MonoBehaviour
         IsConnected = false;
         _isConnecting = false;
         OnDisconnected?.Invoke();
+
+        StopCoroutine(CoSendPing());
 
         // GameManager에 Disconnect 이벤트 전달
         if (GameManager.Instance != null)
@@ -183,6 +188,15 @@ public class NetworkManager : MonoBehaviour
         if (!_isRetrying)
         {
             StartCoroutine(CoRetryConnect());
+        }
+    }
+
+    IEnumerator CoSendPing()
+    {
+        while (IsConnected)
+        {
+            SendPing();
+            yield return new WaitForSeconds(1.0f);
         }
     }
 
@@ -231,5 +245,36 @@ public class NetworkManager : MonoBehaviour
             _session.Send(packet);
         else
             Debug.LogWarning("Cannot send packet - Not connected to server");
+    }
+
+    // ===================================
+    // RTT Calculation
+    // ===================================
+
+    public long RTT { get; private set; } = 0; // ms
+    private long _lastPingTime = 0;
+
+    public void SendPing()
+    {
+        if (!IsConnected) return;
+
+        C_Ping pingPacket = new C_Ping();
+        pingPacket.Timestamp = (long)(Time.realtimeSinceStartupAsDouble * 1000);
+        Send(pingPacket);
+        
+        _lastPingTime = pingPacket.Timestamp;
+    }
+
+    public void UpdateRTT(long serverTimestamp)
+    {
+        long current = (long)(Time.realtimeSinceStartupAsDouble * 1000);
+        long rtt = current - serverTimestamp;
+        
+        if (RTT == 0)
+            RTT = rtt;
+        else
+            RTT = (long)(RTT * 0.8f + rtt * 0.2f); // EMA smoothing
+
+        // Debug.Log($"[NetworkManager] RTT Updated: {RTT}ms");
     }
 }

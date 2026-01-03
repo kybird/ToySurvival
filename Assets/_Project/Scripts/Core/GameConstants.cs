@@ -9,14 +9,15 @@ public static class GameConstants
     // ========================================
     
     /// <summary>
-    /// 서버 tick rate (초당 tick 수)
+    /// [Legacy/Fallback] 기본 서버 tick rate (초당 tick 수)
+    /// 서버 연결 전이나 초기화 실패 시 사용
     /// </summary>
-    public const int TICK_RATE = 30;
+    public const int DEFAULT_TICK_RATE = 30; // Deprecated: Use TickManager.Instance.TickRate
     
     /// <summary>
-    /// 서버 tick 간격 (초 단위)
+    /// [Legacy/Fallback] 기본 서버 tick 간격 (초 단위)
     /// </summary>
-    public const float SERVER_DT = 1.0f / 30.0f;
+    public const float DEFAULT_SERVER_DT = 1.0f / 30.0f; // Deprecated: Use TickManager.Instance.TickInterval
     
     /// <summary>
     /// 최대 extrapolation tick 수

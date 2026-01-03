@@ -30,10 +30,13 @@ public class PacketHandler
                 // TickManager 초기화
                 if (TickManager.Instance != null)
                 {
-                    TickManager.Instance.Initialize(res.ServerTickInterval);
+                    TickManager.Instance.Initialize((int)res.ServerTickRate);
+
+                    // 서버틱 앵커
+                    TickManager.Instance.SetServerTickAnchor(res.ServerTick, Time.realtimeSinceStartupAsDouble, (int)res.ServerTickRate);
                 }
                 
-                Debug.Log($"[PacketHandler] Server Config Sync: {res.ServerTickRate} TPS, {res.ServerTickInterval:F4}s interval");
+                Debug.Log($"[PacketHandler] S_Login Received. Rate: {res.ServerTickRate}, Interval: {res.ServerTickInterval:F6} (Raw Float)");
             }
 
             // GameManager를 통한 상태 전이
@@ -83,8 +86,7 @@ public class PacketHandler
 
     public static void Handle_S_MoveObjectBatch(IMessage packet)
     {
-        // 상태 체크 (InGame에서만 처리)
-        if (GameManager.Instance != null && 
+        if (GameManager.Instance != null &&
             !GameManager.Instance.IsPacketAllowed((int)MsgId.SMoveObjectBatch, new[] { GameState.InGame }))
         {
             return;
@@ -93,25 +95,16 @@ public class PacketHandler
         S_MoveObjectBatch res = (S_MoveObjectBatch)packet;
         if (ObjectManager.Instance == null) return;
 
-        // Tick 동기화 (hard / soft 분기)
-        if (TickManager.Instance != null)
+        // Tick Sync: 최초 1회만
+        if (TickManager.Instance != null && !TickManager.Instance.IsSynced)
         {
-            if (!TickManager.Instance.IsSynced)
-            {
-                // 첫 패킷: hard sync
-                TickManager.Instance.SyncWithServer(res.ServerTick);
-            }
-            else
-            {
-                // 이후 패킷: soft sync (미세 재동기화)
-                TickManager.Instance.ResyncWithServer(res.ServerTick);
-            }
+            TickManager.Instance.SyncWithServer(res.ServerTick);
         }
 
-        // 배치 패킷 처리 (무조건 로컬 플레이어 제외)
+        // long renderTick = TickManager.Instance.EstimatedServerTick;
+
         foreach (ObjectPos pos in res.Moves)
         {
-            // CRITICAL: LocalPlayer는 절대 배치 패킷으로 이동시키지 않음 (Client-Side Prediction 사용)
             if (pos.ObjectId == NetworkManager.Instance.MyPlayerId)
                 continue;
 
@@ -123,21 +116,8 @@ public class PacketHandler
     {
         S_PlayerStateAck res = (S_PlayerStateAck)packet;
         
-        Debug.Log($"[PacketHandler] S_PlayerStateAck received! ServerTick: {res.ServerTick}, Pos: ({res.X}, {res.Y})");
+        // Debug.Log($"[PacketHandler] S_PlayerStateAck received! ServerTick: {res.ServerTick}, Pos: ({res.X}, {res.Y})");
         
-        // Tick 동기화 (PlayerStateAck도 서버 시각을 포함하므로 동기화 소스로 활용)
-        if (TickManager.Instance != null)
-        {
-            if (!TickManager.Instance.IsSynced)
-            {
-                TickManager.Instance.SyncWithServer(res.ServerTick);
-            }
-            else
-            {
-                TickManager.Instance.ResyncWithServer(res.ServerTick);
-            }
-        }
-
         // 서버의 위치 보정/검증 패킷
         if (ObjectManager.Instance != null)
         {
@@ -222,5 +202,17 @@ public class PacketHandler
         C_Pong pong = new C_Pong();
         pong.Timestamp = ping.Timestamp;
         NetworkManager.Instance.Send(pong);
+    }
+
+    public static void Handle_S_Pong(IMessage packet)
+    {
+        S_Pong pong = (S_Pong)packet;
+        NetworkManager.Instance.UpdateRTT(pong.Timestamp);
+    }
+
+    public static void Handle_S_DebugServerTick(IMessage packet)
+    {
+        S_DebugServerTick res = (S_DebugServerTick)packet;
+        Debug.Log($"[PacketHandler] S_DebugServerTick: {res.ServerTick}");
     }
 }

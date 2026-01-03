@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 /// <summary>
 /// Tick 기반 데드레코닝 컴포넌트
@@ -7,124 +8,141 @@ using UnityEngine;
 public class DeadReckoning : MonoBehaviour
 {
     // ========================================
-    // 서버 스냅샷 상태 (int 타입 tick 사용)
+    // Snapshot Interpolation (Valve Style)
     // ========================================
     
-    private int _lastReceivedTick;
-    private Vector2 _lastReceivedPos;
-    private Vector2 _lastReceivedVel;
+    private struct Snapshot
+    {
+        public float time;   // ★ server tick
+        public Vector2 pos;
+        public Vector2 vel;  // ★ per-tick velocity
+    }
+
+    private List<Snapshot> _snapshots = new List<Snapshot>();
+    private const float INTERPOLATION_DELAY = 0.1f; // 100ms (약 3틱) 지연 렌더링 to ensure smooth interpolation
+    
+    // Missing fields restored
     private bool _hasReceivedUpdate = false;
-
-    /// <summary>
-    /// 마지막으로 받은 서버 tick (ObjectManager에서 오래된 패킷 체크용)
-    /// </summary>
-    public int LastReceivedTick => _lastReceivedTick;
-
-    // ========================================
-    // 서버 업데이트
-    // ========================================
-
-    /// <summary>
-    /// 서버로부터 위치/속도/tick 업데이트를 받았을 때 호출
-    /// </summary>
+    public int LastReceivedTick { get; private set; } // For ObjectManager compatibility
+    
     public void UpdateFromServer(float x, float y, float vx, float vy, uint serverTick)
     {
-        // 첫 수신 여부를 먼저 저장 (중요! _hasReceivedUpdate = true 전에 평가)
-        bool isFirst = !_hasReceivedUpdate;
-        
-        _lastReceivedPos = new Vector2(x, y);
-        _lastReceivedVel = new Vector2(vx, vy);
-        _lastReceivedTick = (int)serverTick;  // int로 변환
-        _hasReceivedUpdate = true;
+        // 오래된 패킷 무시 (이중 방어)
+        int tickDiff = unchecked((int)serverTick - LastReceivedTick);
+        if (_hasReceivedUpdate && tickDiff <= 0)
+            return;
 
-        // NOTE:
-        // If velocity == zero, predictedPos remains constant.
-        // This is intentional to preserve authoritative stop without oscillation.
+        Snapshot snap = new Snapshot
+        {
+            time = serverTick,                  // ★ tick 기준
+            pos = new Vector2(x, y),
+            vel = new Vector2(vx, vy)            // ★ tick당 이동량 가정
+        };
 
-        // 첫 업데이트 시 즉시 위치 설정 (텔레포트)
-        if (isFirst)
+        LastReceivedTick = (int)serverTick;
+
+        // 텔레포트 판정 (마지막 스냅샷 기준)
+        if (_snapshots.Count > 0)
         {
-            transform.position = new Vector3(x, y, 0);
-            Debug.Log($"[DeadReckoning] Initial Pos: ({x:F2}, {y:F2}), Vel: ({vx:F2}, {vy:F2}) Tick: {serverTick}");
-        }
-        else
-        {
-            // 이동 중인데 속도가 0인지 확인 (Stuttering 원인 의심)
-            float dist = Vector2.Distance(_lastReceivedPos, new Vector2(x, y));
-            float speed = new Vector2(vx, vy).magnitude;
-            
-            // 위치는 변했는데 속도가 0에 가깝다면 경고
-            if (dist > 0.01f && speed < 0.01f)
+            Snapshot last = _snapshots[_snapshots.Count - 1];
+            float dist = Vector2.Distance(last.pos, snap.pos);
+            if (dist > 5.0f)
             {
-                Debug.LogWarning($"[DeadReckoning] Suspicious Data! Pos Changed ({dist:F4}) but Vel is ZERO. Object: {name}, Tick: {serverTick}");
+                _snapshots.Clear();
+                transform.position = new Vector3(x, y, 0);
             }
         }
+
+        _snapshots.Add(snap);
+
+        // 정렬 보장 (tick 오름차순)
+        _snapshots.Sort((a, b) => a.time.CompareTo(b.time));
+
+        // 버퍼 제한
+        if (_snapshots.Count > 20)
+            _snapshots.RemoveAt(0);
+
+        if (!_hasReceivedUpdate)
+        {
+            transform.position = new Vector3(x, y, 0);
+            _hasReceivedUpdate = true;
+        }
     }
 
-    // ========================================
-    // Tick 기반 예측 및 보정
-    // ========================================
-
-    // WARNING:
-    // Do NOT modify transform.position in Update().
-    // All movement logic MUST reside in FixedUpdate().
-    
-    void FixedUpdate()
+    void Update()
     {
-        if (!_hasReceivedUpdate || TickManager.Instance == null)
+        if (!_hasReceivedUpdate || TickManager.Instance == null || _snapshots.Count == 0)
             return;
-            
-        // 현재 클라이언트 tick 가져오기 (int 타입)
-        int currentTick = TickManager.Instance.GetCurrentTick();
-        int dtTicks = currentTick - _lastReceivedTick;
-        
-        // NOTE: dtTicks가 음수인 경우(지연 패킷) 최소 0으로 처리하여 서버 위치 유지.
-        // MAX_EXTRAPOLATION_TICKS에 도달한 경우, 추가 extrapolation을 중단.
-        dtTicks = Mathf.Clamp(dtTicks, 0, GameConstants.MAX_EXTRAPOLATION_TICKS);
-        
-        // 동적 서버 DT 사용 (NetworkManager가 없으면 기본값 사용)
-        float serverDt = NetworkManager.Instance != null ? NetworkManager.Instance.ServerTickInterval : GameConstants.SERVER_DT;
-        
-        // Tick 기반 예측 위치 계산
-        Vector2 predictedPos = _lastReceivedPos + _lastReceivedVel * (dtTicks * serverDt);
-        Vector2 currentPos = new Vector2(transform.position.x, transform.position.y);
-        float error = Vector2.Distance(currentPos, predictedPos);
-        
-        // Soft Correction
-        if (error < GameConstants.SNAP_EPSILON)
+
+        // tick 기반 렌더 타임
+        float renderTick =
+            TickManager.Instance.EstimateServerTickFloat()
+            - (INTERPOLATION_DELAY / Time.fixedDeltaTime);
+
+        Vector2 nextPos;
+
+        Snapshot first = _snapshots[0];
+        Snapshot last  = _snapshots[_snapshots.Count - 1];
+
+        // 아직 과거 데이터만 있음
+        if (renderTick <= first.time)
         {
-            // 오차가 작으면 즉시 적용 (snap)
-            transform.position = new Vector3(predictedPos.x, predictedPos.y, 0);
+            nextPos = first.pos;
+        }
+        // 최신 스냅샷보다 미래 → extrapolation
+        else if (renderTick >= last.time)
+        {
+            float dt = renderTick - last.time;
+            if (dt > 5f) dt = 5f; // 과도한 예측 방지
+            nextPos = last.pos + last.vel * dt;
         }
         else
         {
-            // 오차가 크면 Lerp 보정 (tick 기준 alpha, Time.deltaTime 사용 금지!)
-            float alpha = GameConstants.CORRECTION_ALPHA_PER_TICK;
-            Vector2 correctedPos = Vector2.Lerp(currentPos, predictedPos, alpha);
-            transform.position = new Vector3(correctedPos.x, correctedPos.y, 0);
+            // interpolation
+            Snapshot a = first, b = last;
+            for (int i = 0; i < _snapshots.Count - 1; i++)
+            {
+                if (_snapshots[i].time <= renderTick &&
+                    _snapshots[i + 1].time >= renderTick)
+                {
+                    a = _snapshots[i];
+                    b = _snapshots[i + 1];
+                    break;
+                }
+            }
+
+            float t = (renderTick - a.time) / (b.time - a.time);
+            nextPos = Vector2.Lerp(a.pos, b.pos, t);
+        }
+
+        transform.position = new Vector3(nextPos.x, nextPos.y, 0);
+        UpdateVisuals(last.vel);
+    }
+    
+    private void UpdateVisuals(Vector2 velocity)
+    {
+        // 1. 좌우 반전 (Flip)
+        if (Mathf.Abs(velocity.x) > 0.01f)
+        {
+            Vector3 scale = transform.localScale;
+            scale.x = velocity.x < 0 ? -Mathf.Abs(scale.x) : Mathf.Abs(scale.x);
+            transform.localScale = scale;
+        }
+        
+        // 2. 애니메이션 (Animator가 있다면)
+        // 'IsRun' 파라미터가 있다고 가정 (ToySurvival 표준)
+        Animator anim = GetComponent<Animator>();
+        if (anim != null)
+        {
+            bool isMoving = velocity.sqrMagnitude > 0.01f;
+            anim.SetBool("IsRun", isMoving);
         }
     }
-
-    // ========================================
-    // 디버그 시각화
-    // ========================================
 
     void OnDrawGizmos()
     {
-        if (!_hasReceivedUpdate)
-            return;
-
-        // 서버 위치 (빨간색)
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(new Vector3(_lastReceivedPos.x, _lastReceivedPos.y, 0), 0.2f);
-
-        // 속도 방향 (파란색 화살표)
-        Gizmos.color = Color.blue;
-        Vector3 serverPos3D = new Vector3(_lastReceivedPos.x, _lastReceivedPos.y, 0);
-        Gizmos.DrawLine(serverPos3D, serverPos3D + new Vector3(_lastReceivedVel.x, _lastReceivedVel.y, 0) * 0.5f);
-        
-        // NOTE:
-        // If velocity == zero, predictedPos remains constant.
-        // This is intentional to preserve authoritative stop without oscillation.
+        // Debugging visualization
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(transform.position, 0.3f);
     }
 }

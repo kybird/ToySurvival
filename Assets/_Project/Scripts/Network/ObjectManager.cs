@@ -132,35 +132,31 @@ public class ObjectManager : MonoBehaviour
 
     public void UpdatePos(ObjectPos pos, uint serverTick)
     {
-        // 내 캐릭터는 로컬에서 제어하므로 서버 위치 업데이트 무시
+        // 내 캐릭터는 서버 위치 무시
         if (pos.ObjectId == NetworkManager.Instance.MyPlayerId)
             return;
 
         if (_objects.TryGetValue(pos.ObjectId, out GameObject go))
         {
-            // DeadReckoning 컴포넌트를 통한 부드러운 이동
             DeadReckoning dr = go.GetComponent<DeadReckoning>();
-            if (dr != null)
+            if (dr == null)
             {
-                // 오래된 패킷 무시 (overflow 안전한 차이값 계산)
-                // tickDiff > 0 이어야 새로운 패킷 (unchecked로 overflow 허용)
-                int tickDiff = unchecked((int)serverTick - dr.LastReceivedTick);
-                
-                if (tickDiff <= 0)
-                {
-                    #if UNITY_EDITOR
-                    // Debug.Log($"[ObjectManager] Ignoring old or duplicate packet for {pos.ObjectId}");
-                    #endif
-                    return;
-                }
-                
-                dr.UpdateFromServer(pos.X, pos.Y, pos.Vx, pos.Vy, serverTick);
-            }
-            else
-            {
-                // Fallback: DeadReckoning이 없으면 즉시 텔레포트
                 go.transform.position = new Vector3(pos.X, pos.Y, 0);
+                return;
             }
+
+            // overflow-safe tick diff
+            int tickDiff = unchecked((int)serverTick - dr.LastReceivedTick);
+            if (tickDiff <= 0)
+                return;
+
+            dr.UpdateFromServer(
+                pos.X,
+                pos.Y,
+                pos.Vx,
+                pos.Vy,
+                serverTick
+            );
         }
     }
 
