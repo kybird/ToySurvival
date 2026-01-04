@@ -128,7 +128,7 @@ public class PacketHandler
         S_PlayerStateAck res = (S_PlayerStateAck)packet;
 
         GameObject myPlayer = ObjectManager.Instance.GetMyPlayer();
-        if (myPlayer != null)
+        if (myPlayer == null)
             return;
 
         ClientSidePredictionController csp =
@@ -239,28 +239,29 @@ public class PacketHandler
     public static void Handle_S_DebugServerTick(IMessage packet)
     {
         S_DebugServerTick res = (S_DebugServerTick)packet;
+        // 이건 디버깅전용 패킷이다.
 
-        if (TickManager.Instance != null)
-        {
-            // 비상용 드리프트 체크 (RTT 기반 Soft Sync) - 더 이상 InitGameAnchor는 여기서 하지 않음
-            float rtt = NetworkManager.Instance != null ? NetworkManager.Instance.RTT : 0;
-            TickManager.Instance.CheckAndCorrectGameAnchor(res.ServerTick, rtt);
+        // if (TickManager.Instance != null)
+        // {
+        //     // 비상용 드리프트 체크 (RTT 기반 Soft Sync) - 더 이상 InitGameAnchor는 여기서 하지 않음
+        //     float rtt = NetworkManager.Instance != null ? NetworkManager.Instance.RTT : 0;
+        //     TickManager.Instance.CheckAndCorrectGameAnchor(res.ServerTick, rtt);
 
-            int currentTick = TickManager.Instance.GetCurrentTick();
-            int estimatedTick = (int)TickManager.Instance.EstimateGameTick();
+        //     int currentTick = TickManager.Instance.GetCurrentTick();
+        //     int estimatedTick = (int)TickManager.Instance.EstimateGameTick();
 
-            // 디버깅: 실제 시간 경과 추적
-            double currentTime = Time.realtimeSinceStartupAsDouble;
+        //     // 디버깅: 실제 시간 경과 추적
+        //     double currentTime = Time.realtimeSinceStartupAsDouble;
 
-            Debug.Log(
-                $"[TickSync] ServerTick: {res.ServerTick} | GameTick: {currentTick} (Est: {estimatedTick}) | Diff: {estimatedTick - (int)res.ServerTick} | RTT: {rtt:F1}ms | RealTime: {currentTime:F3}s"
-            );
-        }
-        else
-        {
-            Debug.LogError(
-                $"[TickSync] Critical Error: TickManager.Instance is NULL! ServerTick: {res.ServerTick}"
-            );
-        }
+        //     Debug.Log(
+        //         $"[TickSync] ServerTick: {res.ServerTick} | GameTick: {currentTick} (Est: {estimatedTick}) | Diff: {estimatedTick - (int)res.ServerTick} | RTT: {rtt:F1}ms | RealTime: {currentTime:F3}s"
+        //     );
+        // }
+        // else
+        // {
+        //     Debug.LogError(
+        //         $"[TickSync] Critical Error: TickManager.Instance is NULL! ServerTick: {res.ServerTick}"
+        //     );
+        // }
     }
 }

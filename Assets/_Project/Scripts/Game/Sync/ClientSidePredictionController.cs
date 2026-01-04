@@ -24,6 +24,7 @@ public class ClientSidePredictionController : MonoBehaviour
     private Vector2 _inputDirection;
 
     private uint _localInputTick = 0;
+    private int _maxHistorySize = 60;
 
     private void UpdateHistorySize()
     {
@@ -71,7 +72,7 @@ public class ClientSidePredictionController : MonoBehaviour
     public void OnMove(InputValue value)
     {
         _inputDirection = value.Get<Vector2>();
-        Debug.Log($"[CSP] OnMove called! Input: {_inputDirection}");
+        // Debug.Log($"[CSP] OnMove called! Input: {_inputDirection}");
     }
 
     void Update()
@@ -135,6 +136,12 @@ public class ClientSidePredictionController : MonoBehaviour
 
         _pendingInputs.Enqueue(new InputCmd { tick = _localInputTick, dir = dir });
 
+        // Safety: Prevent queue from growing indefinitely
+        while (_pendingInputs.Count > _maxHistorySize)
+        {
+            _pendingInputs.Dequeue();
+        }
+
         C_MoveInput pkt = new C_MoveInput();
         pkt.DirX = (int)Mathf.Round(dir.x); // -1, 0, 1
         pkt.DirY = (int)Mathf.Round(dir.y);
@@ -169,12 +176,52 @@ public class ClientSidePredictionController : MonoBehaviour
 
     public void OnPlayerStateAck(S_PlayerStateAck ack)
     {
+        Debug.Log($"[Reconcile] Ack received Tick={ack.ClientTick}");
+
+        float error = Vector2.Distance(
+            new Vector2(transform.position.x, transform.position.y),
+            new Vector2(ack.X, ack.Y)
+        );
+
+        Debug.Log($"[Reconcile] Error={error:F3} Pending={_pendingInputs.Count}");
+
+        // 서버 위치로 보정 (하드스냅)
+        transform.position = new Vector3(ack.X, ack.Y, 0);
+
         // Ack tick 기준으로 _pendingInputs 큐 처리
+        int removedCount = 0;
         while (_pendingInputs.Count > 0 && _pendingInputs.Peek().tick <= ack.ClientTick)
+        {
             _pendingInputs.Dequeue();
+            removedCount++;
+        }
 
         // 남은 입력 재적용
         foreach (var input in _pendingInputs)
             ApplyLocalMove(input.dir);
+
+        // 테스트용 로그
+        Debug.Log(
+            $"[Reconcile] Pos=({transform.position.x:F2},{transform.position.y:F2}) "
+                + $"AckTick={ack.ClientTick} Removed={removedCount} Pending={_pendingInputs.Count}"
+        );
+    }
+
+    private void ApplyLocalMove(Vector2 dir)
+    {
+        if (dir == Vector2.zero)
+            return;
+
+        // 1. 대각선 이동 정규화
+        Vector2 moveDir = dir.normalized;
+
+        // 2. Tick 단위 이동 거리 계산
+        float moveDistance = moveSpeed * NetworkManager.Instance.ServerTickInterval;
+
+        // 3. 현재 위치 업데이트
+        Vector3 pos = transform.position;
+        pos.x += moveDir.x * moveDistance;
+        pos.y += moveDir.y * moveDistance;
+        transform.position = pos;
     }
 }

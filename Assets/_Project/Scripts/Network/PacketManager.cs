@@ -9,7 +9,10 @@ namespace Network
     {
         #region Singleton
         static PacketManager _instance = new PacketManager();
-        public static PacketManager Instance { get { return _instance; } }
+        public static PacketManager Instance
+        {
+            get { return _instance; }
+        }
         #endregion
 
         PacketManager()
@@ -17,7 +20,8 @@ namespace Network
             Register();
         }
 
-        Dictionary<ushort, Action<ArraySegment<byte>, ushort>> _onRecv = new Dictionary<ushort, Action<ArraySegment<byte>, ushort>>();
+        Dictionary<ushort, Action<ArraySegment<byte>, ushort>> _onRecv =
+            new Dictionary<ushort, Action<ArraySegment<byte>, ushort>>();
         Dictionary<ushort, Action<IMessage>> _handler = new Dictionary<ushort, Action<IMessage>>();
 
         Queue<Action> _packetQueue = new Queue<Action>();
@@ -32,7 +36,10 @@ namespace Network
             _handler.Add((ushort)Protocol.MsgId.SLogin, PacketHandler.Handle_S_Login);
 
             _onRecv.Add((ushort)Protocol.MsgId.SMoveObjectBatch, MakePacket<S_MoveObjectBatch>);
-            _handler.Add((ushort)Protocol.MsgId.SMoveObjectBatch, PacketHandler.Handle_S_MoveObjectBatch);
+            _handler.Add(
+                (ushort)Protocol.MsgId.SMoveObjectBatch,
+                PacketHandler.Handle_S_MoveObjectBatch
+            );
 
             _onRecv.Add((ushort)Protocol.MsgId.SCreateRoom, MakePacket<S_CreateRoom>);
             _handler.Add((ushort)Protocol.MsgId.SCreateRoom, PacketHandler.Handle_S_CreateRoom);
@@ -47,19 +54,28 @@ namespace Network
             _handler.Add((ushort)Protocol.MsgId.SSpawnObject, PacketHandler.Handle_S_SpawnObject);
 
             _onRecv.Add((ushort)Protocol.MsgId.SDespawnObject, MakePacket<S_DespawnObject>);
-            _handler.Add((ushort)Protocol.MsgId.SDespawnObject, PacketHandler.Handle_S_DespawnObject);
+            _handler.Add(
+                (ushort)Protocol.MsgId.SDespawnObject,
+                PacketHandler.Handle_S_DespawnObject
+            );
 
             _onRecv.Add((ushort)Protocol.MsgId.SPing, MakePacket<S_Ping>);
             _handler.Add((ushort)Protocol.MsgId.SPing, PacketHandler.Handle_S_Ping);
 
             _onRecv.Add((ushort)Protocol.MsgId.SPlayerStateAck, MakePacket<S_PlayerStateAck>);
-            _handler.Add((ushort)Protocol.MsgId.SPlayerStateAck, PacketHandler.Handle_S_PlayerStateAck);
+            _handler.Add(
+                (ushort)Protocol.MsgId.SPlayerStateAck,
+                PacketHandler.Handle_S_PlayerStateAck
+            );
 
             _onRecv.Add((ushort)Protocol.MsgId.SPong, MakePacket<S_Pong>);
             _handler.Add((ushort)Protocol.MsgId.SPong, PacketHandler.Handle_S_Pong);
 
             _onRecv.Add((ushort)Protocol.MsgId.SDebugServerTick, MakePacket<S_DebugServerTick>);
-            _handler.Add((ushort)Protocol.MsgId.SDebugServerTick, PacketHandler.Handle_S_DebugServerTick);
+            _handler.Add(
+                (ushort)Protocol.MsgId.SDebugServerTick,
+                PacketHandler.Handle_S_DebugServerTick
+            );
         }
 
         public void OnRecvPacket(ArraySegment<byte> buffer, Action<IMessage> onRecvCallback = null)
@@ -67,7 +83,7 @@ namespace Network
             ushort size = BitConverter.ToUInt16(buffer.Array, buffer.Offset);
             ushort id = BitConverter.ToUInt16(buffer.Array, buffer.Offset + 2);
 
-            UnityEngine.Debug.Log($"[PacketManager] OnRecvPacket - ID: {id}, Size: {size}");
+            // UnityEngine.Debug.Log($"[PacketManager] OnRecvPacket - ID: {id}, Size: {size}");
 
             Action<ArraySegment<byte>, ushort> action = null;
             if (_onRecv.TryGetValue(id, out action))
@@ -76,10 +92,13 @@ namespace Network
                 UnityEngine.Debug.LogWarning($"[PacketManager] No parser for packet ID: {id}");
         }
 
-        void MakePacket<T>(ArraySegment<byte> buffer, ushort id) where T : IMessage, new()
+        void MakePacket<T>(ArraySegment<byte> buffer, ushort id)
+            where T : IMessage, new()
         {
             T pkt = new T();
-            pkt.MergeFrom(new ArraySegment<byte>(buffer.Array, buffer.Offset + 4, buffer.Count - 4));
+            pkt.MergeFrom(
+                new ArraySegment<byte>(buffer.Array, buffer.Offset + 4, buffer.Count - 4)
+            );
 
             // UnityEngine.Debug.Log($"[PacketManager] MakePacket - Type: {typeof(T).Name}, ID: {id}");
 
@@ -109,9 +128,9 @@ namespace Network
             lock (_lock)
             {
                 int count = _packetQueue.Count;
-                if (count > 0)
-                    UnityEngine.Debug.Log($"[PacketManager] Flush - Processing {count} packets");
-                
+                // if (count > 0)
+                //     UnityEngine.Debug.Log($"[PacketManager] Flush - Processing {count} packets");
+
                 while (_packetQueue.Count > 0)
                 {
                     Action action = _packetQueue.Dequeue();
@@ -121,7 +140,9 @@ namespace Network
                     }
                     catch (System.Exception e)
                     {
-                        UnityEngine.Debug.LogError($"[PacketManager] Exception in handler: {e.Message}\n{e.StackTrace}");
+                        UnityEngine.Debug.LogError(
+                            $"[PacketManager] Exception in handler: {e.Message}\n{e.StackTrace}"
+                        );
                     }
                 }
             }
