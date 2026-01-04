@@ -17,6 +17,14 @@ public class ClientSidePredictionController : MonoBehaviour
     public float moveSpeed = 5.0f;
     public float sendInterval = 0.1f; // 100ms
 
+    Queue<InputCmd> _pendingInputs = new Queue<InputCmd>();
+
+    private float _lastSendTime = 0;
+    private Vector2 _lastDir = Vector2.zero;
+    private Vector2 _inputDirection;
+
+    private uint _localInputTick = 0;
+
     private void UpdateHistorySize()
     {
         if (TickManager.Instance != null && TickManager.Instance.TickRate > 0)
@@ -24,22 +32,6 @@ public class ClientSidePredictionController : MonoBehaviour
             _maxHistorySize = TickManager.Instance.TickRate * 2; // 2초 버퍼
         }
     }
-
-    Queue<InputCmd> _pendingInputs = new Queue<InputCmd>();
-
-    private float _lastSendTime = 0;
-    private Vector2 _lastDir = Vector2.zero;
-    private Vector2 _inputDirection;
-
-    // Server Reconciliation: 과거 위치 기록
-    private struct PositionHistory
-    {
-        public uint tick;
-        public Vector2 position;
-    }
-
-    private Queue<PositionHistory> _positionHistory = new Queue<PositionHistory>();
-    private int _maxHistorySize = 120; // 기본 120. TickManager 초기화 후 (TickRate * 2초)로 재설정 권장
 
     private void Start()
     {
@@ -101,23 +93,6 @@ public class ClientSidePredictionController : MonoBehaviour
             dir.Normalize();
 
         handleMovement(dir);
-
-        // 이동 후 위치 기록 (Server Reconciliation용)
-        if (TickManager.Instance != null)
-        {
-            uint currentTick = (uint)TickManager.Instance.GetPredictionTick();
-            Vector2 currentPos = new Vector2(transform.position.x, transform.position.y);
-
-            _positionHistory.Enqueue(
-                new PositionHistory { tick = currentTick, position = currentPos }
-            );
-
-            // 오래된 기록 제거
-            while (_positionHistory.Count > _maxHistorySize)
-            {
-                _positionHistory.Dequeue();
-            }
-        }
     }
 
     private void handleMovement(Vector2 dir)
@@ -156,84 +131,26 @@ public class ClientSidePredictionController : MonoBehaviour
 
     private void SendMoveInputPacket(Vector2 dir)
     {
+        _localInputTick++;
+
+        _pendingInputs.Enqueue(new InputCmd { tick = _localInputTick, dir = dir });
+
         C_MoveInput pkt = new C_MoveInput();
         pkt.DirX = (int)Mathf.Round(dir.x); // -1, 0, 1
         pkt.DirY = (int)Mathf.Round(dir.y);
 
-        if (TickManager.Instance != null)
-        {
-            pkt.ClientTick = 0; //(uint)TickManager.Instance.EstimateGameTick(); // Use current tick, not prediction tick
-        }
+        pkt.ClientTick = _localInputTick;
 
         NetworkManager.Instance.Send(pkt);
     }
 
     // 서버로부터 위치 보정 요청 수신 (S_PlayerStateAck)
-    public void OnServerCorrection(float serverX, float serverY, uint serverTick, uint clientTick)
-    {
-        Vector2 serverPos = new Vector2(serverX, serverY);
-
-        // Server Reconciliation: clientTick 시점의 클라이언트 위치 찾기
-        Vector2 clientPosAtClientTick = Vector2.zero;
-        bool found = false;
-
-        foreach (var history in _positionHistory)
-        {
-            if (history.tick == clientTick) // clientTick으로 비교
-            {
-                clientPosAtClientTick = history.position;
-                found = true;
-                break;
-            }
-        }
-
-        if (!found)
-        {
-            // 해당 틱의 기록이 없으면 보정 포기
-            Debug.LogWarning(
-                $"[CSP] OnServerCorrection - ClientTick {clientTick} not found in history"
-            );
-            return;
-        }
-
-        float distance = Vector2.Distance(clientPosAtClientTick, serverPos);
-        Vector2 delta = serverPos - clientPosAtClientTick;
-
-        // Debug.Log($"[CSP] OnServerCorrection - ClientTick: {clientTick}, Error: {distance:F4}, Delta: {delta}");
-
-        // 1. 오차가 너무 크면 (Hard Desync) -> 강제 스냅
-        if (distance > GameConstants.HARD_DESYNC_THRESHOLD)
-        {
-            Debug.LogWarning($"[CSP] Hard Desync! Error: {distance:F4}. Snapping.");
-            transform.position = new Vector3(serverX, serverY, 0);
-            _positionHistory.Clear();
-            return;
-        }
-
-        // 2. 오차가 작지만 존재하면 (Soft Correction) -> 현재 위치와 기록을 '이동'시킴
-        // 과거의 오차만큼 현재 위치도 틀어졌다고 가정하고 보정
-        const float SOFT_CORRECTION_THRESHOLD = 0.5f; // 0.05 -> 0.5 완화 (과도한 보정 방지)
-
-        if (distance > SOFT_CORRECTION_THRESHOLD)
-        {
-            // 현재 위치 보정
-            transform.position += (Vector3)delta;
-            Debug.Log($"[CSP] Soft Corrected by {delta}. NewPos: {transform.position}");
-
-            // 미래의 기록들도 모두 보정 (중복 보정 방지)
-            // Struct라 직접 수정 불가하므로 큐를 새로 구성해아 함
-            int count = _positionHistory.Count;
-            for (int i = 0; i < count; i++)
-            {
-                var h = _positionHistory.Dequeue();
-                if (h.tick >= serverTick) // 해당 틱 포함 이후 기록들 보정
-                {
-                    h.position += delta;
-                }
-                _positionHistory.Enqueue(h);
-            }
-        }
-    }
+    public void OnServerCorrection(
+        float serverX,
+        float serverY,
+        uint serverTick,
+        uint clientTick
+    ) { }
 
     void updateDebugInfo()
     {
@@ -248,5 +165,16 @@ public class ClientSidePredictionController : MonoBehaviour
                 + $"Pos: ({x:F1}, {y:F1})";
             InGameUI.Instance.SetDebugText(debugText);
         }
+    }
+
+    public void OnPlayerStateAck(S_PlayerStateAck ack)
+    {
+        // Ack tick 기준으로 _pendingInputs 큐 처리
+        while (_pendingInputs.Count > 0 && _pendingInputs.Peek().tick <= ack.ClientTick)
+            _pendingInputs.Dequeue();
+
+        // 남은 입력 재적용
+        foreach (var input in _pendingInputs)
+            ApplyLocalMove(input.dir);
     }
 }

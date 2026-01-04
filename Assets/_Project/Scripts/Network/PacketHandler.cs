@@ -127,32 +127,15 @@ public class PacketHandler
     {
         S_PlayerStateAck res = (S_PlayerStateAck)packet;
 
-        // 서버의 위치 보정/검증 패킷
-        if (ObjectManager.Instance != null)
+        GameObject myPlayer = ObjectManager.Instance.GetMyPlayer();
+        if (myPlayer != null)
+            return;
+
+        ClientSidePredictionController csp =
+            myPlayer.GetComponent<ClientSidePredictionController>();
+        if (csp != null)
         {
-            // 로컬 플레이어 객체 찾기
-            GameObject myPlayer = ObjectManager.Instance.GetMyPlayer();
-            if (myPlayer != null)
-            {
-                // myPlayer.transform.position = new Vector3(res.X, res.Y, 0);
-
-                // Reconciliation 현상태에선 무시
-                // 현재 클라이언트 위치
-                // Vector3 clientPos = myPlayer.transform.position;
-                // Vector2 serverPos = new Vector2(res.X, res.Y);
-                // float distance = Vector2.Distance(clientPos, serverPos);
-
-                // Debug.Log(
-                //     $"[PlayerPos] Server: ({res.X:F2}, {res.Y:F2}) | Client: ({clientPos.x:F2}, {clientPos.y:F2}) | Diff: {distance:F2} | ClientTick: {res.ClientTick} | ServerTick: {res.ServerTick}"
-                // );
-
-                // ClientSidePredictionController csp =
-                //     myPlayer.GetComponent<ClientSidePredictionController>();
-                // if (csp != null)
-                // {
-                //     csp.OnServerCorrection(res.X, res.Y, res.ServerTick, res.ClientTick);
-                // }
-            }
+            csp.OnPlayerStateAck(res);
         }
     }
 

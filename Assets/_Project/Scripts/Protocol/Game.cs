@@ -54,45 +54,45 @@ namespace Protocol {
             "IAEoAiJMChFTX01vdmVPYmplY3RCYXRjaBIiCgVtb3ZlcxgBIAMoCzITLlBy",
             "b3RvY29sLk9iamVjdFBvcxITCgtzZXJ2ZXJfdGljaxgCIAEoDSJACgtDX01v",
             "dmVJbnB1dBITCgtjbGllbnRfdGljaxgBIAEoDRINCgVkaXJfeBgCIAEoBRIN",
-            "CgVkaXJfeRgDIAEoBSI9ChBTX1BsYXllclN0YXRlQWNrEhMKC3NlcnZlcl90",
-            "aWNrGAEgASgNEgkKAXgYAyABKAISCQoBeRgEIAEoAiJCCgpDX1VzZVNraWxs",
-            "EhAKCHNraWxsX2lkGAEgASgFEhAKCHRhcmdldF94GAIgASgCEhAKCHRhcmdl",
-            "dF95GAMgASgCIl4KDVNfU2tpbGxFZmZlY3QSEQoJY2FzdGVyX2lkGAEgASgF",
-            "EhAKCHNraWxsX2lkGAIgASgFEgkKAXgYAyABKAISCQoBeRgEIAEoAhISCgp0",
-            "YXJnZXRfaWRzGAUgAygFIjsKDlNfRGFtYWdlRWZmZWN0EhIKCnRhcmdldF9p",
-            "ZHMYASADKAUSFQoNZGFtYWdlX3ZhbHVlcxgCIAMoBSIjCg5TX1BsYXllckRv",
-            "d25lZBIRCglwbGF5ZXJfaWQYASABKAUiIwoOU19QbGF5ZXJSZXZpdmUSEQoJ",
-            "cGxheWVyX2lkGAEgASgFIkIKC1NfRXhwQ2hhbmdlEhMKC2N1cnJlbnRfZXhw",
-            "GAEgASgFEg8KB21heF9leHAYAiABKAUSDQoFbGV2ZWwYAyABKAUiYAoNTGV2",
-            "ZWxVcE9wdGlvbhIRCglvcHRpb25faWQYASABKAUSEAoIc2tpbGxfaWQYAiAB",
-            "KAUSDAoEbmFtZRgDIAEoCRIMCgRkZXNjGAQgASgJEg4KBmlzX25ldxgFIAEo",
-            "CCI7Cg9TX0xldmVsVXBPcHRpb24SKAoHb3B0aW9ucxgBIAMoCzIXLlByb3Rv",
-            "Y29sLkxldmVsVXBPcHRpb24iJwoPQ19TZWxlY3RMZXZlbFVwEhQKDG9wdGlv",
-            "bl9pbmRleBgBIAEoBSI2CglTX0dhbWVXaW4SFQoNdG90YWxfdGltZV9tcxgB",
-            "IAEoAxISCgpraWxsX2NvdW50GAIgASgFIiYKClNfR2FtZU92ZXISGAoQc3Vy",
-            "dml2ZWRfdGltZV9tcxgBIAEoAyIbCgZTX1BpbmcSEQoJdGltZXN0YW1wGAEg",
-            "ASgDIhsKBkNfUG9uZxIRCgl0aW1lc3RhbXAYASABKAMiGwoGQ19QaW5nEhEK",
-            "CXRpbWVzdGFtcBgBIAEoAyIbCgZTX1BvbmcSEQoJdGltZXN0YW1wGAEgASgD",
-            "IigKEVNfRGVidWdTZXJ2ZXJUaWNrEhMKC3NlcnZlcl90aWNrGAEgASgNKpwF",
-            "CgVNc2dJZBIICgROT05FEAASCwoHQ19MT0dJThBkEgsKB1NfTE9HSU4QZRIR",
-            "Cg1DX0NSRUFURV9ST09NEGYSEQoNU19DUkVBVEVfUk9PTRBnEg8KC0NfSk9J",
-            "Tl9ST09NEGgSDwoLU19KT0lOX1JPT00QaRITCg9DX0dFVF9ST09NX0xJU1QQ",
-            "ahIPCgtTX1JPT01fTElTVBBrEhEKDUNfRU5URVJfTE9CQlkQbhIRCg1TX0VO",
-            "VEVSX0xPQkJZEG8SEAoMQ19MRUFWRV9ST09NEHASEAoMU19MRUFWRV9ST09N",
-            "EHESEAoMQ19HQU1FX1JFQURZEHISCgoGQ19DSEFUEHgSCgoGU19DSEFUEHkS",
-            "EwoOU19TUEFXTl9PQkpFQ1QQyAESFQoQU19ERVNQQVdOX09CSkVDVBDJARIY",
-            "ChNTX01PVkVfT0JKRUNUX0JBVENIEMoBEhEKDENfTU9WRV9JTlBVVBDLARIX",
-            "ChJTX1BMQVlFUl9TVEFURV9BQ0sQzAESEAoLQ19VU0VfU0tJTEwQrAISEwoO",
-            "U19TS0lMTF9FRkZFQ1QQrQISFAoPU19EQU1BR0VfRUZGRUNUEK4CEhQKD1Nf",
-            "UExBWUVSX0RPV05FRBCvAhIUCg9TX1BMQVlFUl9SRVZJVkUQsAISEQoMU19F",
-            "WFBfQ0hBTkdFEJADEhYKEVNfTEVWRUxfVVBfT1BUSU9OEJEDEhYKEUNfU0VM",
-            "RUNUX0xFVkVMX1VQEJIDEg8KClNfR0FNRV9XSU4Q9AMSEAoLU19HQU1FX09W",
-            "RVIQ9QMSCwoGU19QSU5HEIQHEgsKBkNfUE9ORxCFBxILCgZDX1BJTkcQhgcS",
-            "CwoGU19QT05HEIcHEhgKE1NfREVCVUdfU0VSVkVSX1RJQ0sQiAcqTAoKT2Jq",
-            "ZWN0VHlwZRILCgdVTktOT1dOEAASCgoGUExBWUVSEAESCwoHTU9OU1RFUhAC",
-            "Eg4KClBST0pFQ1RJTEUQAxIICgRJVEVNEAQqSAoLT2JqZWN0U3RhdGUSCAoE",
-            "SURMRRAAEgoKBk1PVklORxABEg0KCUFUVEFDS0lORxACEggKBERFQUQQAxIK",
-            "CgZET1dORUQQBGIGcHJvdG8z"));
+            "CgVkaXJfeRgDIAEoBSJSChBTX1BsYXllclN0YXRlQWNrEhMKC3NlcnZlcl90",
+            "aWNrGAEgASgNEhMKC2NsaWVudF90aWNrGAIgASgNEgkKAXgYAyABKAISCQoB",
+            "eRgEIAEoAiJCCgpDX1VzZVNraWxsEhAKCHNraWxsX2lkGAEgASgFEhAKCHRh",
+            "cmdldF94GAIgASgCEhAKCHRhcmdldF95GAMgASgCIl4KDVNfU2tpbGxFZmZl",
+            "Y3QSEQoJY2FzdGVyX2lkGAEgASgFEhAKCHNraWxsX2lkGAIgASgFEgkKAXgY",
+            "AyABKAISCQoBeRgEIAEoAhISCgp0YXJnZXRfaWRzGAUgAygFIjsKDlNfRGFt",
+            "YWdlRWZmZWN0EhIKCnRhcmdldF9pZHMYASADKAUSFQoNZGFtYWdlX3ZhbHVl",
+            "cxgCIAMoBSIjCg5TX1BsYXllckRvd25lZBIRCglwbGF5ZXJfaWQYASABKAUi",
+            "IwoOU19QbGF5ZXJSZXZpdmUSEQoJcGxheWVyX2lkGAEgASgFIkIKC1NfRXhw",
+            "Q2hhbmdlEhMKC2N1cnJlbnRfZXhwGAEgASgFEg8KB21heF9leHAYAiABKAUS",
+            "DQoFbGV2ZWwYAyABKAUiYAoNTGV2ZWxVcE9wdGlvbhIRCglvcHRpb25faWQY",
+            "ASABKAUSEAoIc2tpbGxfaWQYAiABKAUSDAoEbmFtZRgDIAEoCRIMCgRkZXNj",
+            "GAQgASgJEg4KBmlzX25ldxgFIAEoCCI7Cg9TX0xldmVsVXBPcHRpb24SKAoH",
+            "b3B0aW9ucxgBIAMoCzIXLlByb3RvY29sLkxldmVsVXBPcHRpb24iJwoPQ19T",
+            "ZWxlY3RMZXZlbFVwEhQKDG9wdGlvbl9pbmRleBgBIAEoBSI2CglTX0dhbWVX",
+            "aW4SFQoNdG90YWxfdGltZV9tcxgBIAEoAxISCgpraWxsX2NvdW50GAIgASgF",
+            "IiYKClNfR2FtZU92ZXISGAoQc3Vydml2ZWRfdGltZV9tcxgBIAEoAyIbCgZT",
+            "X1BpbmcSEQoJdGltZXN0YW1wGAEgASgDIhsKBkNfUG9uZxIRCgl0aW1lc3Rh",
+            "bXAYASABKAMiGwoGQ19QaW5nEhEKCXRpbWVzdGFtcBgBIAEoAyIbCgZTX1Bv",
+            "bmcSEQoJdGltZXN0YW1wGAEgASgDIigKEVNfRGVidWdTZXJ2ZXJUaWNrEhMK",
+            "C3NlcnZlcl90aWNrGAEgASgNKpwFCgVNc2dJZBIICgROT05FEAASCwoHQ19M",
+            "T0dJThBkEgsKB1NfTE9HSU4QZRIRCg1DX0NSRUFURV9ST09NEGYSEQoNU19D",
+            "UkVBVEVfUk9PTRBnEg8KC0NfSk9JTl9ST09NEGgSDwoLU19KT0lOX1JPT00Q",
+            "aRITCg9DX0dFVF9ST09NX0xJU1QQahIPCgtTX1JPT01fTElTVBBrEhEKDUNf",
+            "RU5URVJfTE9CQlkQbhIRCg1TX0VOVEVSX0xPQkJZEG8SEAoMQ19MRUFWRV9S",
+            "T09NEHASEAoMU19MRUFWRV9ST09NEHESEAoMQ19HQU1FX1JFQURZEHISCgoG",
+            "Q19DSEFUEHgSCgoGU19DSEFUEHkSEwoOU19TUEFXTl9PQkpFQ1QQyAESFQoQ",
+            "U19ERVNQQVdOX09CSkVDVBDJARIYChNTX01PVkVfT0JKRUNUX0JBVENIEMoB",
+            "EhEKDENfTU9WRV9JTlBVVBDLARIXChJTX1BMQVlFUl9TVEFURV9BQ0sQzAES",
+            "EAoLQ19VU0VfU0tJTEwQrAISEwoOU19TS0lMTF9FRkZFQ1QQrQISFAoPU19E",
+            "QU1BR0VfRUZGRUNUEK4CEhQKD1NfUExBWUVSX0RPV05FRBCvAhIUCg9TX1BM",
+            "QVlFUl9SRVZJVkUQsAISEQoMU19FWFBfQ0hBTkdFEJADEhYKEVNfTEVWRUxf",
+            "VVBfT1BUSU9OEJEDEhYKEUNfU0VMRUNUX0xFVkVMX1VQEJIDEg8KClNfR0FN",
+            "RV9XSU4Q9AMSEAoLU19HQU1FX09WRVIQ9QMSCwoGU19QSU5HEIQHEgsKBkNf",
+            "UE9ORxCFBxILCgZDX1BJTkcQhgcSCwoGU19QT05HEIcHEhgKE1NfREVCVUdf",
+            "U0VSVkVSX1RJQ0sQiAcqTAoKT2JqZWN0VHlwZRILCgdVTktOT1dOEAASCgoG",
+            "UExBWUVSEAESCwoHTU9OU1RFUhACEg4KClBST0pFQ1RJTEUQAxIICgRJVEVN",
+            "EAQqSAoLT2JqZWN0U3RhdGUSCAoESURMRRAAEgoKBk1PVklORxABEg0KCUFU",
+            "VEFDS0lORxACEggKBERFQUQQAxIKCgZET1dORUQQBGIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Protocol.MsgId), typeof(global::Protocol.ObjectType), typeof(global::Protocol.ObjectState), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -118,7 +118,7 @@ namespace Protocol {
             new pbr::GeneratedClrTypeInfo(typeof(global::Protocol.ObjectPos), global::Protocol.ObjectPos.Parser, new[]{ "ObjectId", "X", "Y", "Vx", "Vy" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Protocol.S_MoveObjectBatch), global::Protocol.S_MoveObjectBatch.Parser, new[]{ "Moves", "ServerTick" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Protocol.C_MoveInput), global::Protocol.C_MoveInput.Parser, new[]{ "ClientTick", "DirX", "DirY" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Protocol.S_PlayerStateAck), global::Protocol.S_PlayerStateAck.Parser, new[]{ "ServerTick", "X", "Y" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Protocol.S_PlayerStateAck), global::Protocol.S_PlayerStateAck.Parser, new[]{ "ServerTick", "ClientTick", "X", "Y" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Protocol.C_UseSkill), global::Protocol.C_UseSkill.Parser, new[]{ "SkillId", "TargetX", "TargetY" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Protocol.S_SkillEffect), global::Protocol.S_SkillEffect.Parser, new[]{ "CasterId", "SkillId", "X", "Y", "TargetIds" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Protocol.S_DamageEffect), global::Protocol.S_DamageEffect.Parser, new[]{ "TargetIds", "DamageValues" }, null, null, null, null),
@@ -5694,6 +5694,7 @@ namespace Protocol {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public S_PlayerStateAck(S_PlayerStateAck other) : this() {
       serverTick_ = other.serverTick_;
+      clientTick_ = other.clientTick_;
       x_ = other.x_;
       y_ = other.y_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -5714,6 +5715,18 @@ namespace Protocol {
       get { return serverTick_; }
       set {
         serverTick_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "client_tick" field.</summary>
+    public const int ClientTickFieldNumber = 2;
+    private uint clientTick_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint ClientTick {
+      get { return clientTick_; }
+      set {
+        clientTick_ = value;
       }
     }
 
@@ -5757,6 +5770,7 @@ namespace Protocol {
         return true;
       }
       if (ServerTick != other.ServerTick) return false;
+      if (ClientTick != other.ClientTick) return false;
       if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(X, other.X)) return false;
       if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(Y, other.Y)) return false;
       return Equals(_unknownFields, other._unknownFields);
@@ -5767,6 +5781,7 @@ namespace Protocol {
     public override int GetHashCode() {
       int hash = 1;
       if (ServerTick != 0) hash ^= ServerTick.GetHashCode();
+      if (ClientTick != 0) hash ^= ClientTick.GetHashCode();
       if (X != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(X);
       if (Y != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(Y);
       if (_unknownFields != null) {
@@ -5791,6 +5806,10 @@ namespace Protocol {
         output.WriteRawTag(8);
         output.WriteUInt32(ServerTick);
       }
+      if (ClientTick != 0) {
+        output.WriteRawTag(16);
+        output.WriteUInt32(ClientTick);
+      }
       if (X != 0F) {
         output.WriteRawTag(29);
         output.WriteFloat(X);
@@ -5813,6 +5832,10 @@ namespace Protocol {
         output.WriteRawTag(8);
         output.WriteUInt32(ServerTick);
       }
+      if (ClientTick != 0) {
+        output.WriteRawTag(16);
+        output.WriteUInt32(ClientTick);
+      }
       if (X != 0F) {
         output.WriteRawTag(29);
         output.WriteFloat(X);
@@ -5834,6 +5857,9 @@ namespace Protocol {
       if (ServerTick != 0) {
         size += 1 + pb::CodedOutputStream.ComputeUInt32Size(ServerTick);
       }
+      if (ClientTick != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(ClientTick);
+      }
       if (X != 0F) {
         size += 1 + 4;
       }
@@ -5854,6 +5880,9 @@ namespace Protocol {
       }
       if (other.ServerTick != 0) {
         ServerTick = other.ServerTick;
+      }
+      if (other.ClientTick != 0) {
+        ClientTick = other.ClientTick;
       }
       if (other.X != 0F) {
         X = other.X;
@@ -5882,6 +5911,10 @@ namespace Protocol {
             break;
           case 8: {
             ServerTick = input.ReadUInt32();
+            break;
+          }
+          case 16: {
+            ClientTick = input.ReadUInt32();
             break;
           }
           case 29: {
@@ -5913,6 +5946,10 @@ namespace Protocol {
             break;
           case 8: {
             ServerTick = input.ReadUInt32();
+            break;
+          }
+          case 16: {
+            ClientTick = input.ReadUInt32();
             break;
           }
           case 29: {
