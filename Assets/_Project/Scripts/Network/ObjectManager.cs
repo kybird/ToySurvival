@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using UnityEngine;
 using Protocol;
+using UnityEngine;
 
 public class ObjectManager : MonoBehaviour
 {
@@ -36,26 +36,30 @@ public class ObjectManager : MonoBehaviour
 
     public void Spawn(ObjectInfo info)
     {
-        Debug.Log($"[ObjectManager] Spawn called for {info.Type}_{info.ObjectId}. Current MyPlayerId: {NetworkManager.Instance?.MyPlayerId ?? -999}");
-        
+        Debug.Log(
+            $"[ObjectManager] Spawn called for {info.Type}_{info.ObjectId}. Current MyPlayerId: {NetworkManager.Instance?.MyPlayerId ?? -999}"
+        );
+
         if (_objects.ContainsKey(info.ObjectId))
             return;
 
         // Resource Path 규칙: Prefabs/{ObjectType}
         // 예: Prefabs/Player, Prefabs/Monster
         string resourcePath = $"Prefabs/{info.Type}";
-        
+
         if (info.Type == ObjectType.Monster)
         {
-            // resourcePath = $"Prefabs/Monster_{info.TypeId}"; 
+            // resourcePath = $"Prefabs/Monster_{info.TypeId}";
         }
 
         Debug.Log($"[ObjectManager] Try to load resource: '{resourcePath}' for Type: {info.Type}");
         GameObject go = _resourceManager.Instantiate(resourcePath);
-        
+
         if (go == null)
         {
-            Debug.LogError($"[ObjectManager] Failed to load prefab at '{resourcePath}'. Check if file exists in Resources/Prefabs/.");
+            Debug.LogError(
+                $"[ObjectManager] Failed to load prefab at '{resourcePath}'. Check if file exists in Resources/Prefabs/."
+            );
             Debug.LogWarning($"[ObjectManager] Fallback to Cube for {info.Type}");
             go = GameObject.CreatePrimitive(PrimitiveType.Cube);
         }
@@ -64,15 +68,19 @@ public class ObjectManager : MonoBehaviour
         float unityX = info.X;
         float unityY = info.Y;
 
-        Debug.Log($"[Spawn] ID: {info.ObjectId}, Type: {info.Type}, ServerPos: ({info.X}, {info.Y}), UnityPos: ({unityX}, {unityY}, 0)");
-        
+        Debug.Log(
+            $"[Spawn] ID: {info.ObjectId}, Type: {info.Type}, ServerPos: ({info.X}, {info.Y}), UnityPos: ({unityX}, {unityY}, 0)"
+        );
+
         go.transform.position = new Vector3(unityX, unityY, 0);
         go.name = $"{info.Type}_{info.ObjectId}";
         _objects.Add(info.ObjectId, go);
 
         // 디버그: ID 비교 확인
         int myId = NetworkManager.Instance != null ? NetworkManager.Instance.MyPlayerId : -1;
-        Debug.Log($"[ObjectManager] Spawning {info.Type}_{info.ObjectId}. MyPlayerId: {myId}, Match: {info.ObjectId == myId}");
+        Debug.Log(
+            $"[ObjectManager] Spawning {info.Type}_{info.ObjectId}. MyPlayerId: {myId}, Match: {info.ObjectId == myId}"
+        );
 
         // 내 플레이어인 경우 ClientSidePredictionController 부착 및 카메라 연결
         if (info.ObjectId == NetworkManager.Instance.MyPlayerId)
@@ -83,7 +91,7 @@ public class ObjectManager : MonoBehaviour
             {
                 csp = go.AddComponent<ClientSidePredictionController>();
             }
-            
+
             // 카메라 연결
             Camera mainCam = Camera.main;
             if (mainCam != null)
@@ -94,9 +102,11 @@ public class ObjectManager : MonoBehaviour
                     camFollow = mainCam.gameObject.AddComponent<CameraFollow>();
                 }
                 camFollow.SetTarget(go.transform);
-                Debug.Log($"[ObjectManager] Camera Locked on MyPlayer (ID: {info.ObjectId}) with CSP");
+                Debug.Log(
+                    $"[ObjectManager] Camera Locked on MyPlayer (ID: {info.ObjectId}) with CSP"
+                );
             }
-            
+
             // 내 플레이어에는 절대 DeadReckoning을 붙이지 않음
             DeadReckoning dr = go.GetComponent<DeadReckoning>();
             if (dr != null)
@@ -106,16 +116,23 @@ public class ObjectManager : MonoBehaviour
         }
         else
         {
+            RemoteInterpolation interp = go.GetComponent<RemoteInterpolation>();
+            if (interp == null)
+            {
+                interp = go.AddComponent<RemoteInterpolation>();
+            }
+
             // 내 플레이어가 아닌 경우 (Remote Player, Monster 등) DeadReckoning 필수
             DeadReckoning dr = go.GetComponent<DeadReckoning>();
             if (dr == null)
             {
                 dr = go.AddComponent<DeadReckoning>();
             }
-            
+
             // Remote 객체에는 CSP가 있으면 안 됨
             ClientSidePredictionController csp = go.GetComponent<ClientSidePredictionController>();
-            if (csp != null) Destroy(csp);
+            if (csp != null)
+                Destroy(csp);
         }
 
         // TODO: Apply HP, State etc.
@@ -138,35 +155,21 @@ public class ObjectManager : MonoBehaviour
 
         if (_objects.TryGetValue(pos.ObjectId, out GameObject go))
         {
-            DeadReckoning dr = go.GetComponent<DeadReckoning>();
-            if (dr == null)
+            var interp = go.GetComponent<RemoteInterpolation>();
+            if (interp == null)
             {
-                go.transform.position = new Vector3(pos.X, pos.Y, 0);
-                return;
+                interp = go.AddComponent<RemoteInterpolation>();
             }
-
-            // overflow-safe tick diff
-            int tickDiff = unchecked((int)serverTick - dr.LastReceivedTick);
-            if (tickDiff <= 0)
-                return;
-
-            dr.UpdateFromServer(
-                pos.X,
-                pos.Y,
-                pos.Vx,
-                pos.Vy,
-                serverTick
-            );
+            interp.TargetPos = new Vector3(pos.X, pos.Y, 0);
         }
     }
 
-    // GetPrefab 메서드는 더 이상 사용하지 않음
-
     public GameObject GetMyPlayer()
     {
-        if (NetworkManager.Instance == null) return null;
+        if (NetworkManager.Instance == null)
+            return null;
         int myId = NetworkManager.Instance.MyPlayerId;
-        
+
         if (_objects.TryGetValue(myId, out GameObject go))
         {
             return go;
@@ -174,4 +177,3 @@ public class ObjectManager : MonoBehaviour
         return null;
     }
 }
-

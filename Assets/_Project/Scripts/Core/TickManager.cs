@@ -1,221 +1,236 @@
 using UnityEngine;
+using Network; // For NetworkManager reference
 
-/// <summary>
-/// 클라이언트 tick 관리 싱글톤
-/// 서버 tick과 동기화하여 tick 기반 시뮬레이션 제공
-/// </summary>
-public class TickManager : MonoBehaviour
+namespace Core
 {
-    public static TickManager Instance { get; private set; }
-
-    public int TickRate { get; private set; }
-    public float TickInterval { get; private set; }
-
-    #region 서버틱 앵커
-    private uint baseServerTick;
-    private double baseLocalTime;
-    
-    // serverTickRate removed as member field, replaced by property above
-    // private int serverTickRate; 
-
-    private bool initialized;
-
-    public void SetServerTickAnchor(uint serverTick, double localTime, int tickRate)
-    {
-        TickRate = tickRate;
-        TickInterval = 1.0f / tickRate;
-
-        float rttMs = (NetworkManager.Instance != null) ? NetworkManager.Instance.RTT : 0;
-        float rttSeconds = rttMs / 1000f;
-
-        int latencyTicks = Mathf.RoundToInt((rttSeconds/2f) * tickRate);
-
-        baseServerTick = serverTick + (uint)latencyTicks;
-        baseLocalTime = Time.realtimeSinceStartupAsDouble;
-        
-        // _clientTick 초기화 (서버 틱에 맞춤)
-        _clientTick = (int)baseServerTick;
-        // _clientTickOffset = 16; // Legacy field removed
-        _isSynced = true;
-
-        initialized = true;
-        uint currentEst = EstimateServerTick();
-        Debug.Log($"[TickSync] Anchor Set! RTT: {rttMs}ms, LatencyTicks: {latencyTicks}, FinalBase: {baseServerTick}, CurrentEst: {currentEst}, Rate: {TickRate}");
-    }
-
-    public uint EstimateServerTick()
-    {
-        if (!initialized || TickRate <= 0)
-            return baseServerTick;
-
-        double dt = Time.realtimeSinceStartupAsDouble - baseLocalTime;
-        if (dt < 0)
-            dt = 0;
-
-        return baseServerTick + (uint)(dt * TickRate);
-    }
-
-    public float EstimateServerTickFloat()
-    {
-        if (!initialized || TickRate <= 0)
-            return baseServerTick;
-
-        double dt = Time.realtimeSinceStartupAsDouble - baseLocalTime;
-        if (dt < 0) dt = 0;
-
-        return baseServerTick + (float)(dt * TickRate);
-    }
-
-    public bool IsInitialized()
-    {
-        return initialized;
-    }
-    
-    #endregion 서버틱 앵커
-
-
-    // ========================================
-    // Tick 상태 (모두 int 타입 사용)
-    // ========================================
-    
-    private int _clientTick = 0;
-    // private int _clientTickOffset = 0; // Removed unused field
-    private bool _isSynced = false;
-
     /// <summary>
-    /// 서버와 동기화 완료 여부
-    /// PacketHandler에서 hard/soft sync 분기에 사용
+    /// 클라이언트 tick 관리 싱글톤
+    /// 서버 tick과 동기화하여 tick 기반 시뮬레이션 제공
     /// </summary>
-    public bool IsSynced => _isSynced;
-
-    // ========================================
-    // Unity Lifecycle
-    // ========================================
-
-    void Awake()
+    public class TickManager : MonoBehaviour
     {
-        // 싱글톤 패턴
-        if (Instance == null)
+        public static TickManager Instance { get; private set; }
+
+        // Configuration and Properties
+        public int TickRate { get; private set; }
+        public float TickInterval { get; private set; }
+
+        #region Dual Timeline System
+
+        // 1. Global Timeline (System/Lobby Time)
+        // 앱 시작/로그인 시점부터 계속 흐르는 시간. 퀘스트, 상점, 채팅 등 로비 로직용.
+        private uint _baseGlobalTick;
+        private double _baseGlobalTime;
+        private bool _globalInitialized;
+
+        // 2. Game Timeline (Room Time)
+        // 방 입장 후 첫 S_DebugServerTick 수신 시점부터 흐르는 시간. 물리, 이동 동기화용.
+        private uint _baseGameTick;
+        private double _baseGameTime;
+        private bool _gameInitialized;
+        private float _gameTickOffset = 0; // Soft Sync용 오프셋 (안전한 보정)
+        
+        // Current Tick State
+        private int _clientTick;
+
+        // Flag to prevent error logs during application quit
+        private static bool _isAppQuitting = false;
+
+        #endregion
+
+        // ========================================
+        // Unity Lifecycle
+        // ========================================
+
+        void Awake()
         {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-            // Awake에서는 기본값으로 먼저 설정 (안전장치)
-            Time.fixedDeltaTime = GameConstants.DEFAULT_SERVER_DT;
-            Debug.Log($"[TickManager] Awake. Default FixedDeltaTime: {Time.fixedDeltaTime:F4}s");
+            Debug.Log($"[TickManager] Awake called on {gameObject.name}. Instance is {(Instance == null ? "NULL" : "SET")}");
+
+            // 싱글톤 패턴
+            if (Instance == null)
+            {
+                Instance = this;
+                
+                // 만약 부모가 있다면 루트로 옮겨서 DontDestroyOnLoad가 보장되도록 함
+                if (transform.parent != null)
+                    transform.SetParent(null);
+
+                DontDestroyOnLoad(gameObject);
+                
+                // 안전장치: Default GameConstants가 없을 경우를 대비
+                TickRate = 30; 
+                TickInterval = 0.0333f;
+                Time.fixedDeltaTime = TickInterval;
+                
+                Debug.Log($"[TickManager] Initialized. Default FixedDeltaTime: {Time.fixedDeltaTime:F4}s");
+            }
+            else
+            {
+                Debug.LogWarning($"[TickManager] Duplicate instance detected on {gameObject.name}. Destroying this.");
+                Destroy(gameObject);
+            }
         }
-        else
+
+        void OnApplicationQuit()
         {
-            Destroy(gameObject);
+            _isAppQuitting = true;
         }
-    }
 
-    /// <summary>
-    /// 로그인 후 서버 설정값으로 TickManager 재설정
-    /// </summary>
-    public void Initialize(int tickRate)
-    {
-        TickRate = tickRate;
-        TickInterval = 1.0f / tickRate;
-        
-        Time.fixedDeltaTime = TickInterval;
-        _isSynced = false;
-        
-        Debug.Log($"[TickManager] Initialize(int) called. InputRate: {tickRate}, CalculatedInterval: {TickInterval:F6}, FixedDeltaTime: {Time.fixedDeltaTime:F6}");
-    }
-
-    void FixedUpdate()
-    {
-        if (!IsInitialized())
-            return;
-        // FixedUpdate는 Unity 내부에서 누락 보정을 수행하므로
-        // clientTick은 호출 횟수에 정확히 비례하여 증가
-        // 프레임 드랍 시에도 tick 손실 없음
-        _clientTick++;
-
-        // 50틱(1초)마다 한 번씩만 출력
-        if (_clientTick % 50 == 0)
+        void OnDestroy()
         {
-            int est = (int)EstimateServerTick();
-            Debug.Log($"[TickCheck] Client: {_clientTick}, Est: {est}, Diff: {_clientTick - est}");
+            if (_isAppQuitting) 
+                return;
+
+            if (Instance == this)
+            {
+                Debug.LogError("[TickManager] Instance is being destroyed! This should not happen for a Persistent Manager.");
+                Instance = null;
+            }
         }
-    }
 
-    public void SyncWithServer(uint serverTick)
-    {
-        // Hard sync는 최초 1회만 허용
-        // if (_isSynced)
-        //     return;
+        // ========================================
+        // Initialization
+        // ========================================
 
-        // int serverTickInt = unchecked((int)serverTick);
+        /// <summary>
+        /// 로그인 시 호출. Global Timeline만 초기화합니다.
+        /// </summary>
+        public void InitializeGlobal(int tickRate, float tickInterval, uint currentGlobalTick)
+        {
+            TickRate = tickRate;
+            TickInterval = tickInterval > 0 ? tickInterval : (1.0f / tickRate);
+            Time.fixedDeltaTime = TickInterval;
 
-        // _clientTickOffset = _clientTick - serverTickInt;
-        // _isSynced = true;
+            // Global Anchor 설정
+            _baseGlobalTick = currentGlobalTick;
+            _baseGlobalTime = Time.realtimeSinceStartupAsDouble;
+            _globalInitialized = true;
 
-        // Debug.Log(
-        //     $"[TickManager] HardSync complete: clientTick={_clientTick}, serverTick={serverTickInt}, offset={_clientTickOffset}"
-        // );
-    }
+            // Game Anchor는 아직 초기화하지 않음 (방 진입 전)
+            _gameInitialized = false;
 
-    public void ResyncWithServer(uint serverTick)
-    {
-        // if (!_isSynced)
-        //     return;
+            Debug.Log($"[TickManager] Global Init. Rate: {TickRate}, GlobalTick: {_baseGlobalTick}");
+        }
 
-        // int serverTickInt = unchecked((int)serverTick);
-        // int currentTick = GetCurrentTick();
-        // int error = currentTick - serverTickInt;
+        /// <summary>
+        /// 게임(룸) 진입 후 첫 틱 패킷 수신 시 호출. Game Timeline을 초기화(Anchor)합니다.
+        /// 로비 대기 시간과 무관하게 방의 현재 틱을 기준으로 시간선을 새로 잡습니다.
+        /// </summary>
+        public void InitGameAnchor(uint roomTick)
+        {
+            if (_gameInitialized) return;
 
-        // // Hard resync는 극단적 케이스만
-        // if (Mathf.Abs(error) > 100)
-        // {
-        //     _clientTickOffset = _clientTick - serverTickInt;
+            // RTT 보정 (Half RTT)
+            float rttMs = (NetworkManager.Instance != null) ? NetworkManager.Instance.RTT : 0;
+            int latencyTicks = Mathf.RoundToInt((rttMs / 2000f) * TickRate); // ms -> sec -> ticks
 
-        //     Debug.LogError(
-        //         $"[TickManager] HARD RESYNC: error={error}, clientTick={_clientTick}, serverTick={serverTickInt}"
-        //     );
-        //     return;
-        // }
+            _baseGameTick = roomTick + (uint)latencyTicks;
+            _baseGameTime = Time.realtimeSinceStartupAsDouble;
+            _gameInitialized = true;
 
-        // // Soft sync: 한 번에 1 tick만 보정
-        // if (Mathf.Abs(error) >= 5)
-        // {
-        //     int correction = Mathf.Clamp(error, -1, 1);
-        //     _clientTickOffset += correction;
+            // 현재 틱 업데이트
+            _clientTick = (int)_baseGameTick;
 
-        //     Debug.LogWarning(
-        //         $"[TickManager] SoftSync: error={error}, correction={correction}, newOffset={_clientTickOffset}"
-        //     );
-        // }
-    }
+            Debug.Log($"[TickManager] Game Anchor Set! ServerRoomTick: {roomTick}, LatencyBonus: {latencyTicks}, FinalBase: {_baseGameTick}");
+        }
 
-    /// <summary>
-    /// 현재 클라이언트 tick 반환 (int 타입)
-    /// 주의: tick 계산은 전 구간 int로 통일 (uint underflow 방지)
-    /// </summary>
-    /// <returns>현재 tick (서버 기준)</returns>
-    public int GetCurrentTick()
-    {
-        return _clientTick; // - _clientTickOffset;
-    }
+        // ========================================
+        // Estimation Logic
+        // ========================================
 
-    /// <summary>
-    /// 클라이언트 사이드 예측을 위한 미래 Tick (RTT 반영)
-    /// </summary>
-    public int GetPredictionTick()
-    {
-        // RTT가 아직 측정 안됐으면 기본값 반환
-        if (NetworkManager.Instance == null || NetworkManager.Instance.RTT == 0)
-            return GetCurrentTick() + 2; // 최소 버퍼
+        public uint EstimateGlobalTick()
+        {
+            if (!_globalInitialized || TickRate <= 0) return 0;
+            double dt = Time.realtimeSinceStartupAsDouble - _baseGlobalTime;
+            if (dt < 0) dt = 0;
+            return _baseGlobalTick + (uint)(dt * TickRate);
+        }
 
-        // RTT(ms) -> Seconds
-        float rttSeconds = NetworkManager.Instance.RTT / 1000f;
+        public uint EstimateGameTick()
+        {
+            if (!_gameInitialized || TickRate <= 0) return 0;
+            double dt = Time.realtimeSinceStartupAsDouble - _baseGameTime;
+            if (dt < 0) dt = 0;
+            float rawTick = _baseGameTick + (float)(dt * TickRate);
+            return (uint)(rawTick + _gameTickOffset); // offset 적용
+        }
+
+        // 호환성용 (인게임 로직에서 사용)
+        public uint EstimateServerTick() => EstimateGameTick();
+        public float EstimateServerTickFloat() => (float)EstimateGameTick();
+
+        public bool IsInitialized() => _gameInitialized; // 인게임 기준
+
+        void FixedUpdate()
+        {
+            if (!IsInitialized()) return;
+
+            // 인게임 틱 갱신
+            _clientTick = (int)EstimateGameTick();
+
+            if (_clientTick % 50 == 0)
+            {
+                // Debug.Log($"[Tick] Game: {_clientTick}, Global: {EstimateGlobalTick()}");
+            }
+        }
         
-        // One-way latency (RTT/2)를 Tick으로 변환
-        int latencyTicks = Mathf.CeilToInt((rttSeconds / 2f) / Time.fixedDeltaTime);
-        
-        // Jitter Buffer (2~3 ticks)
-        int bufferTicks = 2;
+        public int GetCurrentTick() => _clientTick;
 
-        return GetCurrentTick() + latencyTicks + bufferTicks;
+        // RTT 기반 예측 틱 (클라이언트 사이드 예측용)
+        public int GetPredictionTick()
+        {
+            if (NetworkManager.Instance == null || NetworkManager.Instance.RTT == 0)
+                return GetCurrentTick() + 2;
+
+            float rttSeconds = NetworkManager.Instance.RTT / 1000f;
+            int latencyTicks = Mathf.CeilToInt((rttSeconds / 2f) * TickRate);
+            int bufferTicks = 2; // Jitter Buffer
+
+            return GetCurrentTick() + latencyTicks + bufferTicks;
+        }
+
+        // 기존 레거시 메서드 및 필드 제거됨 (CheckAndCorrectAnchor 등은 필요 시 재구현 가능하나, Anchor 재설정 방식이므로 생략)
+        // 혹시 모를 대규모 Drift 대비용으로 CheckAndCorrectGameAnchor를 남길 수도 있음.
+        public void CheckAndCorrectGameAnchor(uint roomTick, float rttMs)
+        {
+            if (!_gameInitialized) return;
+            
+            // 1. RTT를 고려한 실제 서버 틱 추정
+            float halfRttSeconds = (rttMs / 2000f);
+            float rttTicks = halfRttSeconds * TickRate;
+            float actualServerTick = roomTick + rttTicks;
+            
+            // 2. 클라이언트 추정 틱 (offset 제외한 raw 값)
+            double dt = Time.realtimeSinceStartupAsDouble - _baseGameTime;
+            float rawClientTick = _baseGameTick + (float)(dt * TickRate);
+            float clientTick = rawClientTick + _gameTickOffset;
+            
+            // 3. 오차 계산 (서버 - 클라 = 양수면 클라가 느림)
+            float diff = actualServerTick - clientTick;
+
+            // 4. 단계별 보정
+            if (Mathf.Abs(diff) < 10 && Mathf.Abs(diff) > 0.5f)
+            {
+                // Soft Sync: offset을 10%씩 조정 (빠르고 부드럽게)
+                float adjustment = diff * 0.1f;
+                _gameTickOffset += adjustment; // diff가 음수면 offset 감소, 양수면 증가
+                Debug.Log($"[TickManager] Soft Sync: Diff {diff:F1} (RTT: {rttMs:F1}ms) → Offset {_gameTickOffset:F2}");
+            }
+            else if (Mathf.Abs(diff) >= 10 && Mathf.Abs(diff) < 60)
+            {
+                // Medium Sync: offset을 5%씩 조정
+                float adjustment = diff * 0.05f;
+                _gameTickOffset += adjustment;
+                Debug.Log($"[TickManager] Medium Sync: Diff {diff:F1} → Offset {_gameTickOffset:F2}");
+            }
+            else if (Mathf.Abs(diff) >= 60)
+            {
+                // Hard Sync: 강제 재동기화 (offset 리셋)
+                Debug.LogWarning($"[TickManager] Hard Sync! Diff: {diff:F1}");
+                _gameTickOffset = 0;
+                _gameInitialized = false;
+                InitGameAnchor(roomTick);
+            }
+        }
     }
 }

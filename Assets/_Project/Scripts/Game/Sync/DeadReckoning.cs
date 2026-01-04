@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Core;
 
 /// <summary>
 /// Tick 기반 데드레코닝 컴포넌트
@@ -24,6 +25,7 @@ public class DeadReckoning : MonoBehaviour
     // Missing fields restored
     private bool _hasReceivedUpdate = false;
     public int LastReceivedTick { get; private set; } // For ObjectManager compatibility
+    private double _lastSnapshotTime = 0; // Real-time when last snapshot was received
     
     public void UpdateFromServer(float x, float y, float vx, float vy, uint serverTick)
     {
@@ -54,6 +56,7 @@ public class DeadReckoning : MonoBehaviour
         }
 
         _snapshots.Add(snap);
+        _lastSnapshotTime = Time.realtimeSinceStartupAsDouble; // Record when this snapshot was received
 
         // 정렬 보장 (tick 오름차순)
         _snapshots.Sort((a, b) => a.time.CompareTo(b.time));
@@ -74,15 +77,17 @@ public class DeadReckoning : MonoBehaviour
         if (!_hasReceivedUpdate || TickManager.Instance == null || _snapshots.Count == 0)
             return;
 
-        // tick 기반 렌더 타임
-        float renderTick =
-            TickManager.Instance.EstimateServerTickFloat()
-            - (INTERPOLATION_DELAY / Time.fixedDeltaTime);
+        // TickManager의 EstimateGameTick()은 이미 서버 틱과 동기화되어 있음
+        // (InitGameAnchor에서 서버 틱 기준으로 초기화됨)
+        float currentGameTick = TickManager.Instance.EstimateServerTickFloat();
+        
+        // 보간 지연 적용 (100ms = 약 2.5틱 @ 25TPS)
+        float renderTick = currentGameTick - (INTERPOLATION_DELAY * TickManager.Instance.TickRate);
 
         Vector2 nextPos;
 
         Snapshot first = _snapshots[0];
-        Snapshot last  = _snapshots[_snapshots.Count - 1];
+        Snapshot last = _snapshots[_snapshots.Count - 1];
 
         // 아직 과거 데이터만 있음
         if (renderTick <= first.time)
@@ -93,7 +98,9 @@ public class DeadReckoning : MonoBehaviour
         else if (renderTick >= last.time)
         {
             float dt = renderTick - last.time;
-            if (dt > 5f) dt = 5f; // 과도한 예측 방지
+            // Delta Sync로 인해 패킷 간격이 클 수 있음 (최대 30틱)
+            // Extrapolation을 2틱(80ms)으로 제한하여 과도한 예측 방지
+            if (dt > 2f) dt = 2f;
             nextPos = last.pos + last.vel * dt;
         }
         else
@@ -121,12 +128,14 @@ public class DeadReckoning : MonoBehaviour
     
     private void UpdateVisuals(Vector2 velocity)
     {
-        // 1. 좌우 반전 (Flip)
+        // 1. 좌우 반전 (Flip) - Use SpriteRenderer.flipX instead of negative scale
         if (Mathf.Abs(velocity.x) > 0.01f)
         {
-            Vector3 scale = transform.localScale;
-            scale.x = velocity.x < 0 ? -Mathf.Abs(scale.x) : Mathf.Abs(scale.x);
-            transform.localScale = scale;
+            SpriteRenderer sr = GetComponentInChildren<SpriteRenderer>();
+            if (sr != null)
+            {
+                sr.flipX = velocity.x < 0;
+            }
         }
         
         // 2. 애니메이션 (Animator가 있다면)

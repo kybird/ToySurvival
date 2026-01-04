@@ -75,7 +75,7 @@ public class NetworkManager : MonoBehaviour
         {
             GameObject go = new GameObject("TickManager");
             go.AddComponent<TickManager>();
-            Debug.Log("[NetworkManager] TickManager created");
+            Debug.Log($"[NetworkManager] TickManager created. Instance is now: {(TickManager.Instance != null ? "VALID" : "NULL")}");
         }
 
         // ObjectManager
