@@ -116,11 +116,11 @@ public class ObjectManager : MonoBehaviour
         }
         else
         {
+        {
+            // Remote Interpolation 제거 (DeadReckoning으로 대체)
             RemoteInterpolation interp = go.GetComponent<RemoteInterpolation>();
-            if (interp == null)
-            {
-                interp = go.AddComponent<RemoteInterpolation>();
-            }
+            if (interp != null)
+                Destroy(interp);
 
             // 내 플레이어가 아닌 경우 (Remote Player, Monster 등) DeadReckoning 필수
             DeadReckoning dr = go.GetComponent<DeadReckoning>();
@@ -155,12 +155,12 @@ public class ObjectManager : MonoBehaviour
 
         if (_objects.TryGetValue(pos.ObjectId, out GameObject go))
         {
-            var interp = go.GetComponent<RemoteInterpolation>();
-            if (interp == null)
+            var dr = go.GetComponent<DeadReckoning>();
+            if (dr != null)
             {
-                interp = go.AddComponent<RemoteInterpolation>();
+                // VX, VY 포함하여 전달 (Hermite Spline 지원)
+                dr.UpdateFromServer(pos.X, pos.Y, pos.Vx, pos.Vy, serverTick);
             }
-            interp.TargetPos = new Vector3(pos.X, pos.Y, 0);
         }
     }
 

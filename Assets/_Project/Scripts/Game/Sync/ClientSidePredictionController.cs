@@ -13,215 +13,155 @@ struct InputCmd
 [RequireComponent(typeof(PlayerInput))]
 public class ClientSidePredictionController : MonoBehaviour
 {
-    [Header("Movement Settings")]
-    public float moveSpeed = 5.0f;
-    public float sendInterval = 0.1f; // 100ms
+    [Header("Movement")]
+    public float moveSpeed = 5f;
 
-    Queue<InputCmd> _pendingInputs = new Queue<InputCmd>();
+    [Header("Network")]
+    public float sendInterval = 0.1f; // 전송 샘플링 전용
 
-    private float _lastSendTime = 0;
-    private Vector2 _lastDir = Vector2.zero;
-    private Vector2 _inputDirection;
+    [Header("Correction")]
+    public float correctionSpeed = 8f;
+    public float snapThreshold = 2.0f;
 
-    private uint _localInputTick = 0;
-    private int _maxHistorySize = 60;
+    // ===== Tick & Input =====
+    private uint _localSimTick = 0;
+    private Vector2 _inputDir;
+    private Vector2 _lastSentDir;
+    private float _lastSendTime;
 
-    private void UpdateHistorySize()
-    {
-        if (TickManager.Instance != null && TickManager.Instance.TickRate > 0)
-        {
-            _maxHistorySize = TickManager.Instance.TickRate * 2; // 2초 버퍼
-        }
-    }
+    private readonly Queue<InputCmd> _pendingInputs = new();
+    private int _maxHistorySize = 120;
+
+    // ===== Position =====
+    private Vector3 _logicPos;
+    private Vector3 _prevLogicPos;
+    private Vector2 _pendingCorrection;
 
     private void Start()
     {
-        Debug.Log("[CSP] Start() called");
-        UpdateHistorySize();
-        var playerInput = GetComponent<PlayerInput>();
-        if (playerInput != null)
-        {
-            Debug.Log(
-                $"[CSP] PlayerInput found. Current Map: {playerInput.currentActionMap?.name}"
-            );
-            // "Player" 맵이 활성화되어 있는지 확인 및 활성화
-            if (
-                playerInput.currentActionMap == null
-                || playerInput.currentActionMap.name != "Player"
-            )
-            {
-                playerInput.SwitchCurrentActionMap("Player");
-                Debug.Log("[CSP] Switched to Player action map");
-            }
-            Debug.Log(
-                $"[CSP] PlayerInput Initialized. Current Map: {playerInput.currentActionMap?.name}"
-            );
-        }
-        else
-        {
-            Debug.LogError("[CSP] PlayerInput component NOT FOUND!");
-        }
+        _logicPos = transform.position;
+        _prevLogicPos = _logicPos;
 
-        // 서버와 동일한 고정 타임스텝 설정
-        // TickManager에서 S_Login 시점에 이미 설정됨
-        // Time.fixedDeltaTime = 1.0f / 30.0f; // REMOVED
-
-        Debug.Log($"[CSP] Fixed timestep is {Time.fixedDeltaTime:F4}s");
+        if (TickManager.Instance != null)
+            _maxHistorySize = TickManager.Instance.TickRate * 2;
     }
 
     public void OnMove(InputValue value)
     {
-        _inputDirection = value.Get<Vector2>();
-        // Debug.Log($"[CSP] OnMove called! Input: {_inputDirection}");
+        _inputDir = value.Get<Vector2>();
+        if (_inputDir.sqrMagnitude > 1f)
+            _inputDir.Normalize();
     }
 
-    void Update()
+    // ===============================
+    // CLIENT SIMULATION (AUTHORITATIVE)
+    // ===============================
+    private void FixedUpdate()
     {
-        // Update는 네트워크 전송과 UI 업데이트만 담당
-        Vector2 dir = _inputDirection;
-        if (dir.magnitude > 1.0f)
-            dir.Normalize();
+        _localSimTick++;
 
-        handleNetwork(dir);
-        updateDebugInfo();
+        // 1️⃣ 입력 히스토리 기록 (절대 압축 금지)
+        _pendingInputs.Enqueue(new InputCmd { tick = _localSimTick, dir = _inputDir });
+
+        while (_pendingInputs.Count > _maxHistorySize)
+            _pendingInputs.Dequeue();
+
+        // 2️⃣ 보간용 스냅샷
+        _prevLogicPos = _logicPos;
+
+        // 3️⃣ 이동
+        SimulateMove(_inputDir);
     }
 
-    void FixedUpdate()
+    private void SimulateMove(Vector2 dir)
     {
-        // FixedUpdate에서 실제 이동 처리 (서버와 동일한 고정 타임스텝)
-        Vector2 dir = _inputDirection;
-        if (dir.magnitude > 1.0f)
-            dir.Normalize();
+        Vector3 step = (Vector3)(dir * moveSpeed * Time.fixedDeltaTime);
 
-        handleMovement(dir);
+        // Soft correction (저역 통과)
+        if (_pendingCorrection.sqrMagnitude > 0.00001f)
+        {
+            Vector2 corrStep = _pendingCorrection * correctionSpeed * Time.fixedDeltaTime;
+
+            if (corrStep.sqrMagnitude > _pendingCorrection.sqrMagnitude)
+                corrStep = _pendingCorrection;
+
+            step += (Vector3)corrStep;
+            _pendingCorrection -= corrStep;
+        }
+
+        _logicPos += step;
     }
 
-    private void handleMovement(Vector2 dir)
+    // ===============================
+    // VISUAL INTERPOLATION
+    // ===============================
+    private void Update()
     {
-        // 1. Client-Side Prediction: 입력 즉시 이동
-        // 서버와 동일한 고정 타임스텝 사용 (FixedUpdate에서 호출되므로 Time.fixedDeltaTime 자동 적용)
-        // if (dir != Vector2.zero)
-        // {
-        //     Debug.Log($"[CSP] Moving! Dir: {dir}, Speed: {moveSpeed}, DeltaTime: {Time.fixedDeltaTime}");
-        // }
-        transform.Translate(new Vector3(dir.x, dir.y, 0) * moveSpeed * Time.fixedDeltaTime);
+        SendInputIfNeeded();
+
+        float alpha = (Time.time - Time.fixedTime) / Time.fixedDeltaTime;
+        alpha = Mathf.Clamp01(alpha);
+
+        transform.position = Vector3.Lerp(_prevLogicPos, _logicPos, alpha);
     }
 
-    private void handleNetwork(Vector2 dir)
+    // ===============================
+    // NETWORK SEND (SAMPLE ONLY)
+    // ===============================
+    private void SendInputIfNeeded()
     {
-        if (NetworkManager.Instance == null || NetworkManager.Instance.IsConnected == false)
+        if (NetworkManager.Instance == null || !NetworkManager.Instance.IsConnected)
             return;
 
-        if (Time.time - _lastSendTime >= sendInterval || dir != _lastDir)
+        if (Time.time - _lastSendTime < sendInterval && _inputDir == _lastSentDir)
+            return;
+
+        C_MoveInput pkt = new()
         {
-            // 최소구현
-            //  if (dir == Vector2.zero && _lastDir == Vector2.zero)
-            //  {
-            //      // 계속 정지 중 -> 패킷 생략 가능 (Heartbeat로 대체)
-            //      // 하지만 마지막 정지 패킷은 확실히 보내야 함.
-            //      // _lastDir 갱신 로직에 따라 처리.
-            //  }
-            //  else
-            {
-                SendMoveInputPacket(dir);
-                _lastSendTime = Time.time;
-                _lastDir = dir;
-            }
-        }
-    }
-
-    private void SendMoveInputPacket(Vector2 dir)
-    {
-        _localInputTick++;
-
-        _pendingInputs.Enqueue(new InputCmd { tick = _localInputTick, dir = dir });
-
-        // Safety: Prevent queue from growing indefinitely
-        while (_pendingInputs.Count > _maxHistorySize)
-        {
-            _pendingInputs.Dequeue();
-        }
-
-        C_MoveInput pkt = new C_MoveInput();
-        pkt.DirX = (int)Mathf.Round(dir.x); // -1, 0, 1
-        pkt.DirY = (int)Mathf.Round(dir.y);
-
-        pkt.ClientTick = _localInputTick;
+            DirX = Mathf.RoundToInt(_inputDir.x),
+            DirY = Mathf.RoundToInt(_inputDir.y),
+            ClientTick = _localSimTick, // 마지막 시뮬 tick
+        };
 
         NetworkManager.Instance.Send(pkt);
+
+        _lastSendTime = Time.time;
+        _lastSentDir = _inputDir;
     }
 
-    // 서버로부터 위치 보정 요청 수신 (S_PlayerStateAck)
-    public void OnServerCorrection(
-        float serverX,
-        float serverY,
-        uint serverTick,
-        uint clientTick
-    ) { }
-
-    void updateDebugInfo()
-    {
-        if (InGameUI.Instance != null)
-        {
-            float x = transform.position.x;
-            float y = transform.position.y;
-
-            string debugText =
-                $"[CSP] ID: {NetworkManager.Instance.MyPlayerId}\n"
-                + $"RTT: {NetworkManager.Instance.RTT}ms\n"
-                + $"Pos: ({x:F1}, {y:F1})";
-            InGameUI.Instance.SetDebugText(debugText);
-        }
-    }
-
+    // ===============================
+    // SERVER ACK / RECONCILE
+    // ===============================
     public void OnPlayerStateAck(S_PlayerStateAck ack)
     {
-        Debug.Log($"[Reconcile] Ack received Tick={ack.ClientTick}");
+        Vector2 serverPos = new(ack.X, ack.Y);
 
-        float error = Vector2.Distance(
-            new Vector2(transform.position.x, transform.position.y),
-            new Vector2(ack.X, ack.Y)
-        );
-
-        Debug.Log($"[Reconcile] Error={error:F3} Pending={_pendingInputs.Count}");
-
-        // 서버 위치로 보정 (하드스냅)
-        transform.position = new Vector3(ack.X, ack.Y, 0);
-
-        // Ack tick 기준으로 _pendingInputs 큐 처리
-        int removedCount = 0;
+        // 1️⃣ 서버가 처리한 tick까지 제거
         while (_pendingInputs.Count > 0 && _pendingInputs.Peek().tick <= ack.ClientTick)
         {
             _pendingInputs.Dequeue();
-            removedCount++;
         }
 
-        // 남은 입력 재적용
+        // 2️⃣ 클라 방식 그대로 재시뮬
+        Vector2 idealPos = serverPos;
         foreach (var input in _pendingInputs)
-            ApplyLocalMove(input.dir);
+        {
+            idealPos += input.dir * moveSpeed * Time.fixedDeltaTime;
+        }
 
-        // 테스트용 로그
-        Debug.Log(
-            $"[Reconcile] Pos=({transform.position.x:F2},{transform.position.y:F2}) "
-                + $"AckTick={ack.ClientTick} Removed={removedCount} Pending={_pendingInputs.Count}"
-        );
-    }
+        Vector2 currentPos = _logicPos;
+        Vector2 error = idealPos - currentPos;
 
-    private void ApplyLocalMove(Vector2 dir)
-    {
-        if (dir == Vector2.zero)
+        // 3️⃣ Hard snap
+        if (error.magnitude > snapThreshold)
+        {
+            _logicPos = idealPos;
+            _prevLogicPos = _logicPos;
+            _pendingCorrection = Vector2.zero;
             return;
+        }
 
-        // 1. 대각선 이동 정규화
-        Vector2 moveDir = dir.normalized;
-
-        // 2. Tick 단위 이동 거리 계산
-        float moveDistance = moveSpeed * NetworkManager.Instance.ServerTickInterval;
-
-        // 3. 현재 위치 업데이트
-        Vector3 pos = transform.position;
-        pos.x += moveDir.x * moveDistance;
-        pos.y += moveDir.y * moveDistance;
-        transform.position = pos;
+        // 4️⃣ Soft correction (방향 튐 방지)
+        _pendingCorrection = Vector2.Lerp(_pendingCorrection, error, 0.35f);
     }
 }
