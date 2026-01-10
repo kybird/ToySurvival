@@ -116,7 +116,6 @@ public class ObjectManager : MonoBehaviour
         }
         else
         {
-        {
             // Remote Interpolation 제거 (DeadReckoning으로 대체)
             RemoteInterpolation interp = go.GetComponent<RemoteInterpolation>();
             if (interp != null)
