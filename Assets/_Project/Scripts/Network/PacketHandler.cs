@@ -264,4 +264,85 @@ public class PacketHandler
         //     );
         // }
     }
+
+    public static void Handle_S_DamageEffect(IMessage packet)
+    {
+        S_DamageEffect res = (S_DamageEffect)packet;
+        for (int i = 0; i < res.TargetIds.Count; i++)
+        {
+            int targetId = res.TargetIds[i];
+            int damage = res.DamageValues[i];
+
+            // ObjectManager를 통해 해당 오브젝트에 데미지 이펙트 출력
+            if (ObjectManager.Instance != null)
+            {
+                ObjectManager.Instance.OnDamage(targetId, damage);
+            }
+        }
+    }
+
+    public static void Handle_S_PlayerDowned(IMessage packet)
+    {
+        S_PlayerDowned res = (S_PlayerDowned)packet;
+        Debug.Log($"[PacketHandler] Player Downed: {res.PlayerId}");
+
+        // 1. 오브젝트 상태 변경 (반투명 등)
+        if (ObjectManager.Instance != null)
+        {
+            ObjectManager.Instance.SetObjectState(res.PlayerId, ObjectState.Downed);
+        }
+
+        // 2. 상단 알림 UI 출력
+        if (GameUI.Instance != null)
+        {
+            bool isMe = (res.PlayerId == NetworkManager.Instance.MyPlayerId);
+            string msg = isMe ? "You are DOWNED!" : $"Player {res.PlayerId} is DOWNED!";
+            GameUI.Instance.ShowNotification(msg, Color.red);
+        }
+    }
+
+    public static void Handle_S_PlayerRevive(IMessage packet)
+    {
+        S_PlayerRevive res = (S_PlayerRevive)packet;
+        Debug.Log($"[PacketHandler] Player Revived: {res.PlayerId}");
+
+        // 1. 오브젝트 상태 복구
+        if (ObjectManager.Instance != null)
+        {
+            ObjectManager.Instance.SetObjectState(res.PlayerId, ObjectState.Idle);
+        }
+
+        // 2. 상단 알림 UI 출력
+        if (GameUI.Instance != null)
+        {
+            bool isMe = (res.PlayerId == NetworkManager.Instance.MyPlayerId);
+            string msg = isMe ? "You are REVIVED!" : $"Player {res.PlayerId} is REVIVED!";
+            GameUI.Instance.ShowNotification(msg, Color.green);
+        }
+    }
+
+    public static void Handle_S_GameOver(IMessage packet)
+    {
+        S_GameOver res = (S_GameOver)packet;
+        Debug.Log(
+            $"[PacketHandler] Game Over! IsWin: {res.IsWin}, SurvivedTime: {res.SurvivedTimeMs}ms"
+        );
+
+        // UI 처리 (게임 결과창 띄우기)
+        if (GameUI.Instance != null)
+        {
+            GameUI.Instance.ShowGameOver(res.IsWin, res.SurvivedTimeMs);
+        }
+    }
+
+    public static void Handle_S_PlayerDead(IMessage packet)
+    {
+        S_PlayerDead res = (S_PlayerDead)packet;
+        Debug.Log($"[PacketHandler] Player Dead: {res.PlayerId}");
+
+        if (ObjectManager.Instance != null)
+        {
+            ObjectManager.Instance.OnPlayerDead(res.PlayerId);
+        }
+    }
 }

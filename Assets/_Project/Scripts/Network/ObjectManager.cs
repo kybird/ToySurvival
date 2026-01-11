@@ -163,6 +163,87 @@ public class ObjectManager : MonoBehaviour
         }
     }
 
+    public void OnDamage(int targetId, int damage)
+    {
+        if (_objects.TryGetValue(targetId, out GameObject go))
+        {
+            // 간단한 히트 연출: 빨간색으로 깜빡임
+            var renderer = go.GetComponentInChildren<SpriteRenderer>();
+            if (renderer != null)
+            {
+                StartCoroutine(CoFlashColor(renderer, Color.red, 0.1f));
+            }
+
+            Debug.Log($"[ObjectManager] Object {targetId} took {damage} damage.");
+        }
+    }
+
+    public void OnPlayerDead(int playerId)
+    {
+        if (_objects.TryGetValue(playerId, out GameObject go))
+        {
+            // 사망 연출: 회색으로 변하고 잠시 후 제거
+            var renderer = go.GetComponentInChildren<SpriteRenderer>();
+            if (renderer != null)
+            {
+                renderer.color = Color.gray;
+            }
+
+            // 0.5초 후 제거
+            StartCoroutine(CoDespawnWithDelay(playerId, 0.5f));
+
+            Debug.Log($"[ObjectManager] Player {playerId} is DEAD.");
+        }
+    }
+
+    public void SetObjectState(int objectId, ObjectState state)
+    {
+        if (_objects.TryGetValue(objectId, out GameObject go))
+        {
+            var renderer = go.GetComponentInChildren<SpriteRenderer>();
+            if (renderer == null)
+                return;
+
+            switch (state)
+            {
+                case ObjectState.Downed:
+                    // 다운된 상태: 반투명 처리
+                    Color c = renderer.color;
+                    c.a = 0.5f;
+                    renderer.color = c;
+                    break;
+                case ObjectState.Idle:
+                case ObjectState.Moving:
+                    // 정상 상태: 불투명 복구
+                    Color c2 = renderer.color;
+                    c2.a = 1.0f;
+                    renderer.color = c2;
+                    break;
+            }
+        }
+    }
+
+    private System.Collections.IEnumerator CoFlashColor(
+        SpriteRenderer renderer,
+        Color flashColor,
+        float duration
+    )
+    {
+        if (renderer == null)
+            yield break;
+        Color originalColor = renderer.color;
+        renderer.color = flashColor;
+        yield return new WaitForSeconds(duration);
+        if (renderer != null)
+            renderer.color = originalColor;
+    }
+
+    private System.Collections.IEnumerator CoDespawnWithDelay(int objectId, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        Despawn(objectId);
+    }
+
     public GameObject GetMyPlayer()
     {
         if (NetworkManager.Instance == null)
