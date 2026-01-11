@@ -85,7 +85,9 @@ public class DeadReckoning : MonoBehaviour
         {
             time = serverTick, // ★ tick 기준
             pos = new Vector2(x, y),
-            vel = new Vector2(vx, vy), // ★ tick당 이동량 가정
+            // Server sends units/second (e.g. 2.0)
+            // We use Ticks for time, so convert to units/tick
+            vel = new Vector2(vx, vy) / TickManager.Instance.TickRate,
         };
 
         LastReceivedTick = (int)serverTick;
@@ -104,6 +106,16 @@ public class DeadReckoning : MonoBehaviour
 
         _snapshots.Add(snap);
         _lastSnapshotTime = Time.realtimeSinceStartupAsDouble; // Record when this snapshot was received
+
+        // DEBUG: 서버 위치 vs 현재 렌더링 위치 비교
+        Vector2 currentRenderPos = new Vector2(transform.position.x, transform.position.y);
+        float diff = Vector2.Distance(currentRenderPos, snap.pos);
+        if (diff > 0.5f) // 0.5 유닛 이상 차이 나면 로그
+        {
+            Debug.LogWarning(
+                $"[DeadReckoning] ID={gameObject.name} | ServerPos=({snap.pos.x:F2},{snap.pos.y:F2}) | RenderPos=({currentRenderPos.x:F2},{currentRenderPos.y:F2}) | Diff={diff:F2} | Vel=({snap.vel.x:F2},{snap.vel.y:F2})"
+            );
+        }
 
         // 정렬 보장 (tick 오름차순)
         _snapshots.Sort((a, b) => a.time.CompareTo(b.time));

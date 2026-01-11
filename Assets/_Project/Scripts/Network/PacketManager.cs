@@ -76,6 +76,27 @@ namespace Network
                 (ushort)Protocol.MsgId.SDebugServerTick,
                 PacketHandler.Handle_S_DebugServerTick
             );
+
+            _onRecv.Add((ushort)Protocol.MsgId.SDamageEffect, MakePacket<S_DamageEffect>);
+            _handler.Add((ushort)Protocol.MsgId.SDamageEffect, PacketHandler.Handle_S_DamageEffect);
+
+            _onRecv.Add((ushort)Protocol.MsgId.SPlayerDowned, MakePacket<S_PlayerDowned>);
+            _handler.Add((ushort)Protocol.MsgId.SPlayerDowned, PacketHandler.Handle_S_PlayerDowned);
+
+            _onRecv.Add((ushort)Protocol.MsgId.SPlayerRevive, MakePacket<S_PlayerRevive>);
+            _handler.Add((ushort)Protocol.MsgId.SPlayerRevive, PacketHandler.Handle_S_PlayerRevive);
+
+            _onRecv.Add((ushort)Protocol.MsgId.SGameOver, MakePacket<S_GameOver>);
+            _handler.Add((ushort)Protocol.MsgId.SGameOver, PacketHandler.Handle_S_GameOver);
+
+            _onRecv.Add((ushort)Protocol.MsgId.SPlayerDead, MakePacket<S_PlayerDead>);
+            _handler.Add((ushort)Protocol.MsgId.SPlayerDead, PacketHandler.Handle_S_PlayerDead);
+
+            _onRecv.Add((ushort)Protocol.MsgId.SExpChange, MakePacket<S_ExpChange>);
+            _handler.Add((ushort)Protocol.MsgId.SExpChange, PacketHandler.Handle_S_ExpChange);
+
+            _onRecv.Add((ushort)Protocol.MsgId.SHpChange, MakePacket<S_HpChange>);
+            _handler.Add((ushort)Protocol.MsgId.SHpChange, PacketHandler.Handle_S_HpChange);
         }
 
         public void OnRecvPacket(ArraySegment<byte> buffer, Action<IMessage> onRecvCallback = null)

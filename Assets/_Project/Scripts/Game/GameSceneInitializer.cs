@@ -1,6 +1,6 @@
-using UnityEngine;
 using Core;
 using Protocol;
+using UnityEngine;
 
 /// <summary>
 /// GameScene 전용 초기화 스크립트
@@ -8,24 +8,54 @@ using Protocol;
 /// </summary>
 public class GameSceneInitializer : MonoBehaviour
 {
-    void Awake()
+    void Start()
     {
         Debug.Log("[GameSceneInitializer] Initializing GameScene...");
-        
+
         // 이전 게임 오브젝트 정리
         if (ObjectManager.Instance != null)
         {
             ObjectManager.Instance.Clear();
         }
 
-        // 씬 로드 완료 이벤트 트리거 (Loading -> InGame 전이)
-        if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameState.Loading)
+        // 씬 로드 완료 이벤트 트리거 (Forced)
+        if (GameManager.Instance != null)
         {
+            Debug.Log(
+                $"[GameSceneInitializer] Request Transition: {GameManager.Instance.CurrentState} -> InGame"
+            );
             GameManager.Instance.TriggerEvent(StateEvent.SceneLoadComplete);
         }
 
-        // 서버에 준비 완료 알림 (중요!)
-        SendGameReady();
+        // 상태 전환 대기 후 GameReady 전송
+        StartCoroutine(WaitAndSendGameReady());
+    }
+
+    private System.Collections.IEnumerator WaitAndSendGameReady()
+    {
+        // GameManager가 InGame 상태가 될 때까지 대기
+        // (안전장치: 최대 5초 대기)
+        float timeout = 5.0f;
+        while (
+            GameManager.Instance != null
+            && GameManager.Instance.CurrentState != GameState.InGame
+            && timeout > 0
+        )
+        {
+            yield return null;
+            timeout -= Time.deltaTime;
+        }
+
+        if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameState.InGame)
+        {
+            SendGameReady();
+        }
+        else
+        {
+            Debug.LogError(
+                $"[GameSceneInitializer] State transition failed. Current: {GameManager.Instance?.CurrentState}"
+            );
+        }
     }
 
     private void SendGameReady()

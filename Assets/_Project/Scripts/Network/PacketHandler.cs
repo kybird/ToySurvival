@@ -158,6 +158,8 @@ public class PacketHandler
 
     public static void Handle_S_SpawnObject(IMessage packet)
     {
+        Debug.Log("[PacketHandler] Handle_S_SpawnObject Called (Raw)");
+
         // 상태 체크 (InGame에서만 처리 - C_GameReady 이후에만 서버가 전송)
         if (
             GameManager.Instance != null
@@ -194,6 +196,15 @@ public class PacketHandler
                 $"[PacketHandler] Spawning - Type: {obj.Type}, ID: {obj.ObjectId}, Pos: ({obj.X}, {obj.Y})"
             );
             ObjectManager.Instance.Spawn(obj);
+
+            // [MyPlayer Initial HP Sync]
+            if (obj.ObjectId == NetworkManager.Instance.MyPlayerId)
+            {
+                if (PlayerHUD.Instance != null)
+                {
+                    PlayerHUD.Instance.UpdateHP(obj.Hp, obj.MaxHp);
+                }
+            }
         }
     }
 
@@ -298,6 +309,12 @@ public class PacketHandler
             bool isMe = (res.PlayerId == NetworkManager.Instance.MyPlayerId);
             string msg = isMe ? "You are DOWNED!" : $"Player {res.PlayerId} is DOWNED!";
             GameUI.Instance.ShowNotification(msg, Color.red);
+
+            // 내가 다운되었으면 부활 대기 화면 표시
+            if (isMe)
+            {
+                GameUI.Instance.ShowPlayerDowned();
+            }
         }
     }
 
@@ -318,6 +335,12 @@ public class PacketHandler
             bool isMe = (res.PlayerId == NetworkManager.Instance.MyPlayerId);
             string msg = isMe ? "You are REVIVED!" : $"Player {res.PlayerId} is REVIVED!";
             GameUI.Instance.ShowNotification(msg, Color.green);
+
+            // 내가 부활했으면 부활 대기 화면 숨기기
+            if (isMe)
+            {
+                GameUI.Instance.HidePlayerDowned();
+            }
         }
     }
 
@@ -343,6 +366,37 @@ public class PacketHandler
         if (ObjectManager.Instance != null)
         {
             ObjectManager.Instance.OnPlayerDead(res.PlayerId);
+        }
+    }
+
+    public static void Handle_S_ExpChange(IMessage packet)
+    {
+        S_ExpChange res = (S_ExpChange)packet;
+        Debug.Log($"[PacketHandler] Exp Change: {res.CurrentExp}/{res.MaxExp} Lv.{res.Level}");
+
+        if (PlayerHUD.Instance != null)
+        {
+            PlayerHUD.Instance.UpdateExp(res.CurrentExp, res.MaxExp, res.Level);
+        }
+    }
+
+    public static void Handle_S_HpChange(IMessage packet)
+    {
+        S_HpChange res = (S_HpChange)packet;
+        Debug.Log(
+            $"[PacketHandler] HP Change: {res.CurrentHp}/{res.MaxHp} for ObjectID: {res.ObjectId}"
+        );
+
+        if (res.ObjectId == NetworkManager.Instance.MyPlayerId)
+        {
+            if (PlayerHUD.Instance != null)
+            {
+                PlayerHUD.Instance.UpdateHP((int)res.CurrentHp, (int)res.MaxHp);
+            }
+        }
+        else
+        {
+            // Optional: Update other players' UI (overhead HP bar?)
         }
     }
 }
