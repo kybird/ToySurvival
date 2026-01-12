@@ -20,7 +20,7 @@ public class DeadReckoning : MonoBehaviour
     }
 
     private List<Snapshot> _snapshots = new List<Snapshot>();
-    private const float INTERPOLATION_DELAY = 0.1f; // 100ms (약 3틱) 지연 렌더링 to ensure smooth interpolation
+    private const float INTERPOLATION_DELAY = 0.05f; // 50ms (약 1.5틱) 지연 렌더링 - 더 반응적
 
     // Missing fields restored
     private bool _hasReceivedUpdate = false;
@@ -28,10 +28,10 @@ public class DeadReckoning : MonoBehaviour
     private double _lastSnapshotTime = 0;
 
     // Adaptive Interpolation
-    private float _avgRTT = 0.05f; // 초기값 50ms
+    private float _avgRTT = 0.03f; // 초기값 30ms
     private float _rttVar = 0f; // RTT 분산 (Jitter Estimator)
-    private float _currentDelay = 0.1f;
-    private const float MIN_DELAY = 0.05f; // 최소 버퍼 50ms (TickRate 30Hz 기준 약 1.5틱)
+    private float _currentDelay = 0.05f;
+    private const float MIN_DELAY = 0.033f; // 최소 버퍼 33ms (TickRate 30Hz 기준 1틱)
 
     // Components (Cached)
     private SpriteRenderer _spriteRenderer;
@@ -110,10 +110,10 @@ public class DeadReckoning : MonoBehaviour
         // DEBUG: 서버 위치 vs 현재 렌더링 위치 비교
         Vector2 currentRenderPos = new Vector2(transform.position.x, transform.position.y);
         float diff = Vector2.Distance(currentRenderPos, snap.pos);
-        if (diff > 0.5f) // 0.5 유닛 이상 차이 나면 로그
+        if (diff > 0.3f) // 0.3 유닛 이상 차이 나면 로그 (임계값 축소)
         {
             Debug.LogWarning(
-                $"[DeadReckoning] ID={gameObject.name} | ServerPos=({snap.pos.x:F2},{snap.pos.y:F2}) | RenderPos=({currentRenderPos.x:F2},{currentRenderPos.y:F2}) | Diff={diff:F2} | Vel=({snap.vel.x:F2},{snap.vel.y:F2})"
+                $"[DeadReckoning] ID={gameObject.name} | ServerPos=({snap.pos.x:F2},{snap.pos.y:F2}) | RenderPos=({currentRenderPos.x:F2},{currentRenderPos.y:F2}) | Diff={diff:F2} | Vel=({snap.vel.x:F2},{snap.vel.y:F2}) | Delay={_currentDelay:F3}s"
             );
         }
 
@@ -144,6 +144,16 @@ public class DeadReckoning : MonoBehaviour
         // Delay (Seconds) -> Delay (Ticks)
         float delayTicks = _currentDelay * TickManager.Instance.TickRate;
         float renderTick = currentGameTick - delayTicks;
+
+        // [DEBUG] 틱 동기화 진단
+        Snapshot lastSnap = _snapshots[_snapshots.Count - 1];
+        float tickBehind = lastSnap.time - renderTick;
+        if (tickBehind > 3f || tickBehind < -1f) // 정상 범위 밖이면 로그
+        {
+            Debug.LogWarning(
+                $"[TickSync] {gameObject.name} | GameTick={currentGameTick:F1} | RenderTick={renderTick:F1} | LastSnapTick={lastSnap.time:F0} | Behind={tickBehind:F1}"
+            );
+        }
 
         Vector2 nextPos;
 

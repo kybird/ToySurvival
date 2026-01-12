@@ -18,6 +18,12 @@ public class GameSceneInitializer : MonoBehaviour
             ObjectManager.Instance.Clear();
         }
 
+        // [중요] 틱 앵커 리셋 - 새 게임에서 올바른 틱 동기화를 위해 필수
+        if (TickManager.Instance != null)
+        {
+            TickManager.Instance.ResetGameAnchor();
+        }
+
         // 씬 로드 완료 이벤트 트리거 (Forced)
         if (GameManager.Instance != null)
         {

@@ -49,7 +49,13 @@ public class ObjectManager : MonoBehaviour
 
         if (info.Type == ObjectType.Monster)
         {
-            // resourcePath = $"Prefabs/Monster_{info.TypeId}";
+            // Monster_1, Monster_2 등 타입별 프리팹 지원
+            resourcePath = $"Prefabs/Monster_{info.TypeId}";
+        }
+        else if (info.Type == ObjectType.Projectile)
+        {
+            // Projectile_1 등 타입별 프리팹 지원
+            resourcePath = $"Prefabs/Projectile_{info.TypeId}";
         }
 
         Debug.Log($"[ObjectManager] Try to load resource: '{resourcePath}' for Type: {info.Type}");
@@ -57,8 +63,17 @@ public class ObjectManager : MonoBehaviour
 
         if (go == null)
         {
+            Debug.LogWarning(
+                $"[ObjectManager] Failed to load prefab at '{resourcePath}'. Fallback to generic {info.Type}"
+            );
+            resourcePath = $"Prefabs/{info.Type}";
+            go = _resourceManager.Instantiate(resourcePath);
+        }
+
+        if (go == null)
+        {
             Debug.LogError(
-                $"[ObjectManager] Failed to load prefab at '{resourcePath}'. Check if file exists in Resources/Prefabs/."
+                $"[ObjectManager] Failed to load fallback prefab at '{resourcePath}'. Check if file exists in Resources/Prefabs/."
             );
             Debug.LogWarning($"[ObjectManager] Fallback to Cube for {info.Type}");
             go = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -134,7 +149,24 @@ public class ObjectManager : MonoBehaviour
                 Destroy(csp);
         }
 
-        // TODO: Apply HP, State etc.
+        // Initialize HP Bar if exists
+        HpBar hpBar = go.GetComponentInChildren<HpBar>();
+        if (hpBar != null)
+        {
+            hpBar.Init(info.Hp, info.MaxHp);
+        }
+    }
+
+    public void UpdateHp(int objectId, float currentHp, float maxHp)
+    {
+        if (_objects.TryGetValue(objectId, out GameObject go))
+        {
+            HpBar hpBar = go.GetComponentInChildren<HpBar>();
+            if (hpBar != null)
+            {
+                hpBar.SetHp(currentHp, maxHp);
+            }
+        }
     }
 
     public void Despawn(int objectId)
@@ -167,11 +199,25 @@ public class ObjectManager : MonoBehaviour
     {
         if (_objects.TryGetValue(targetId, out GameObject go))
         {
-            // 간단한 히트 연출: 빨간색으로 깜빡임
+            // 1. Flash Effect
             var renderer = go.GetComponentInChildren<SpriteRenderer>();
             if (renderer != null)
             {
                 StartCoroutine(CoFlashColor(renderer, Color.red, 0.1f));
+            }
+
+            // 2. Spawn Damage Text
+            // Load "Prefabs/DamageText"
+            // Note: In a real project, cache this prefab or use an object pool.
+            GameObject dmgTextObj = _resourceManager.Instantiate("Prefabs/DamageText");
+            if (dmgTextObj != null)
+            {
+                dmgTextObj.transform.position = go.transform.position + Vector3.up * 1.0f; // Above the unit
+                DamageText dt = dmgTextObj.GetComponent<DamageText>();
+                if (dt != null)
+                {
+                    dt.Setup(damage);
+                }
             }
 
             Debug.Log($"[ObjectManager] Object {targetId} took {damage} damage.");

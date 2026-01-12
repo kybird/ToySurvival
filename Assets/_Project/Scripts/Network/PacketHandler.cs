@@ -228,6 +228,7 @@ public class PacketHandler
 
         foreach (int id in res.ObjectIds)
         {
+            Debug.Log($"[PacketHandler] Despawning Object ID: {id}");
             ObjectManager.Instance.Despawn(id);
         }
     }
@@ -396,7 +397,11 @@ public class PacketHandler
         }
         else
         {
-            // Optional: Update other players' UI (overhead HP bar?)
+            // Update remote object's HP bar
+            if (ObjectManager.Instance != null)
+            {
+                ObjectManager.Instance.UpdateHp(res.ObjectId, res.CurrentHp, res.MaxHp);
+            }
         }
     }
 }
