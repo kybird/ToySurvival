@@ -94,7 +94,7 @@ public class ObjectManager : MonoBehaviour
         _objects.Clear();
     }
 
-    public void Spawn(ObjectInfo info)
+    public void Spawn(ObjectInfo info, uint serverTick = 0)
     {
         Debug.Log(
             $"[ObjectManager] Spawn called for {info.Type}_{info.ObjectId}. Current MyPlayerId: {NetworkManager.Instance?.MyPlayerId ?? -999}"
@@ -126,8 +126,18 @@ public class ObjectManager : MonoBehaviour
             Debug.LogWarning(
                 $"[ObjectManager] Failed to load prefab at '{resourcePath}'. Fallback to generic {info.Type}"
             );
+
+            // 1. Enum String Fallback
             resourcePath = $"Prefabs/{info.Type}";
             go = _resourceManager.Instantiate(resourcePath);
+
+            // 2. Explicit String Fallback (Guard against Enum name mismatch)
+            if (go == null && info.Type == ObjectType.Projectile)
+            {
+                Debug.LogWarning("[ObjectManager] Fallback to explicit 'Prefabs/Projectile'");
+                resourcePath = "Prefabs/Projectile";
+                go = _resourceManager.Instantiate(resourcePath);
+            }
         }
 
         if (go == null)
@@ -148,6 +158,7 @@ public class ObjectManager : MonoBehaviour
         );
 
         go.transform.position = new Vector3(unityX, unityY, 0);
+        go.transform.rotation = Quaternion.identity;
         go.name = $"{info.Type}_{info.ObjectId}";
         _objects.Add(info.ObjectId, go);
 
@@ -207,6 +218,12 @@ public class ObjectManager : MonoBehaviour
             ClientSidePredictionController csp = go.GetComponent<ClientSidePredictionController>();
             if (csp != null)
                 Destroy(csp);
+
+            // [Important] Initialize immediately with Velocity for correct initial rotation
+            if (serverTick > 0 && dr != null)
+            {
+                dr.UpdateFromServer(info.X, info.Y, info.Vx, info.Vy, serverTick);
+            }
         }
 
         // Initialize HP Bar if exists

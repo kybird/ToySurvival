@@ -195,7 +195,7 @@ public class PacketHandler
             Debug.Log(
                 $"[PacketHandler] Spawning - Type: {obj.Type}, ID: {obj.ObjectId}, Pos: ({obj.X}, {obj.Y})"
             );
-            ObjectManager.Instance.Spawn(obj);
+            ObjectManager.Instance.Spawn(obj, res.ServerTick);
 
             // [MyPlayer Initial HP Sync]
             if (obj.ObjectId == NetworkManager.Instance.MyPlayerId)

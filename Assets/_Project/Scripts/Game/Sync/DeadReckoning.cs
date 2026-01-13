@@ -131,6 +131,26 @@ public class DeadReckoning : MonoBehaviour
         if (!_hasReceivedUpdate)
         {
             transform.position = new Vector3(x, y, 0);
+
+            // [Fix] 초기 회전값 리셋 (큐브가 이상하게 회전되어 나오는 문제 방지)
+            if (gameObject.name.Contains("Projectile"))
+            {
+                // 첫 프레임에는 속도 방향으로 즉시 회전
+                if (vx != 0 || vy != 0)
+                {
+                    float angle = Mathf.Atan2(vy, vx) * Mathf.Rad2Deg;
+                    transform.rotation = Quaternion.Euler(0, 0, angle);
+                }
+                else
+                {
+                    transform.rotation = Quaternion.identity;
+                }
+            }
+            else
+            {
+                transform.rotation = Quaternion.identity;
+            }
+
             _hasReceivedUpdate = true;
         }
     }
@@ -175,12 +195,12 @@ public class DeadReckoning : MonoBehaviour
         // [DEBUG] 틱 동기화 진단
         Snapshot lastSnap = _snapshots[_snapshots.Count - 1];
         float tickBehind = lastSnap.time - renderTick;
-        if (tickBehind > 3f || tickBehind < -1f) // 정상 범위 밖이면 로그
-        {
-            Debug.LogWarning(
-                $"[TickSync] {gameObject.name} | GameTick={currentGameTick:F1} | RenderTick={renderTick:F1} | LastSnapTick={lastSnap.time:F0} | Behind={tickBehind:F1}"
-            );
-        }
+        // if (tickBehind > 3f || tickBehind < -1f) // 정상 범위 밖이면 로그
+        // {
+        //     Debug.LogWarning(
+        //         $"[TickSync] {gameObject.name} | GameTick={currentGameTick:F1} | RenderTick={renderTick:F1} | LastSnapTick={lastSnap.time:F0} | Behind={tickBehind:F1}"
+        //     );
+        // }
 
         Vector2 nextPos;
 
@@ -255,20 +275,34 @@ public class DeadReckoning : MonoBehaviour
 
     private void UpdateVisuals(Vector2 velocity)
     {
-        // 1. 좌우 반전 (Flip) - Use Cached SpriteRenderer
-        if (Mathf.Abs(velocity.x) > 0.01f)
+        if (velocity.sqrMagnitude < 0.01f)
+            return;
+
+        // [MVP] 투사체는 진행 방향으로 회전
+        if (gameObject.name.Contains("Projectile"))
         {
+            float angle = Mathf.Atan2(velocity.y, velocity.x) * Mathf.Rad2Deg;
+            transform.rotation = Quaternion.Euler(0, 0, angle);
+
+            // 회전 시 flipX 해제 (스프라이트 원본이 오른쪽 기준)
+            if (_spriteRenderer != null)
+            {
+                _spriteRenderer.flipX = false;
+            }
+        }
+        else
+        {
+            // 캐릭터는 좌우 반전 (Flip)
             if (_spriteRenderer != null)
             {
                 _spriteRenderer.flipX = velocity.x < 0;
             }
-        }
 
-        // 2. 애니메이션 - Use Cached Animator
-        if (_animator != null)
-        {
-            bool isMoving = velocity.sqrMagnitude > 0.01f;
-            _animator.SetBool("IsRun", isMoving);
+            // 애니메이션
+            if (_animator != null)
+            {
+                _animator.SetBool("IsRun", true);
+            }
         }
     }
 
