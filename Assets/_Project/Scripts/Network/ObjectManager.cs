@@ -14,17 +14,77 @@ public class ObjectManager : MonoBehaviour
 
     private Dictionary<int, GameObject> _objects = new Dictionary<int, GameObject>();
 
+    private Material _flashMaterial;
+
     void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+
+            // Initialize Flash Material (Optimization)
+            Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null)
+                shader = Shader.Find("Unlit/Color");
+
+            if (shader != null)
+            {
+                _flashMaterial = new Material(shader);
+                if (_flashMaterial.HasProperty("_BaseColor"))
+                    _flashMaterial.SetColor("_BaseColor", Color.red);
+                else if (_flashMaterial.HasProperty("_Color"))
+                    _flashMaterial.SetColor("_Color", Color.red);
+            }
+            else
+            {
+                Debug.LogError("[ObjectManager] Could not find Unlit shader for flash effect.");
+            }
         }
         else
         {
             // 이미 존재하면 자신을 파괴 (싱글톤 유지)
             Destroy(gameObject);
+        }
+    }
+
+    private System.Collections.IEnumerator CoFlashColor(
+        SpriteRenderer renderer,
+        Color flashColor,
+        float duration
+    )
+    {
+        if (renderer == null)
+            yield break;
+        Color originalColor = renderer.color;
+        renderer.color = flashColor;
+        yield return new WaitForSeconds(duration);
+        if (renderer != null)
+            renderer.color = originalColor;
+    }
+
+    private System.Collections.IEnumerator CoFlashColorMesh(
+        MeshRenderer renderer,
+        Color flashColor,
+        float duration
+    )
+    {
+        if (renderer == null || _flashMaterial == null)
+            yield break;
+
+        // 1. 백업: 원래 매테리얼 (SharedMaterial 사용으로 인스턴싱 방지)
+        Material originalMat = renderer.sharedMaterial;
+
+        // 2. 교체: 캐싱된 플래시 매테리얼 사용 (GC 없음)
+        renderer.sharedMaterial = _flashMaterial;
+
+        // 3. 대기
+        yield return new WaitForSeconds(duration);
+
+        // 4. 원복
+        if (renderer != null)
+        {
+            renderer.sharedMaterial = originalMat;
         }
     }
 
@@ -161,6 +221,28 @@ public class ObjectManager : MonoBehaviour
     {
         if (_objects.TryGetValue(objectId, out GameObject go))
         {
+            // 1. Flash Effect (Damage Feedback)
+            var spriteRenderer = go.GetComponentInChildren<SpriteRenderer>();
+            if (spriteRenderer != null)
+            {
+                // Debug.Log($"[ObjectManager] Found SpriteRenderer on {go.name}");
+                StartCoroutine(CoFlashColor(spriteRenderer, Color.red, 0.1f));
+            }
+            else
+            {
+                var meshRenderer = go.GetComponentInChildren<MeshRenderer>();
+                if (meshRenderer != null)
+                {
+                    Debug.Log($"[ObjectManager] Found MeshRenderer on {go.name}. Starting Flash.");
+                    StartCoroutine(CoFlashColorMesh(meshRenderer, Color.red, 0.1f));
+                }
+                else
+                {
+                    Debug.LogWarning($"[ObjectManager] No Renderer found on {go.name} to flash!");
+                }
+            }
+
+            // 2. Update HP Bar
             HpBar hpBar = go.GetComponentInChildren<HpBar>();
             if (hpBar != null)
             {
@@ -269,25 +351,22 @@ public class ObjectManager : MonoBehaviour
         }
     }
 
-    private System.Collections.IEnumerator CoFlashColor(
-        SpriteRenderer renderer,
-        Color flashColor,
-        float duration
-    )
-    {
-        if (renderer == null)
-            yield break;
-        Color originalColor = renderer.color;
-        renderer.color = flashColor;
-        yield return new WaitForSeconds(duration);
-        if (renderer != null)
-            renderer.color = originalColor;
-    }
-
     private System.Collections.IEnumerator CoDespawnWithDelay(int objectId, float delay)
     {
         yield return new WaitForSeconds(delay);
         Despawn(objectId);
+    }
+
+    public void ApplyKnockback(int objectId, float dirX, float dirY, float force, float duration)
+    {
+        if (_objects.TryGetValue(objectId, out GameObject go))
+        {
+            var dr = go.GetComponent<DeadReckoning>();
+            if (dr != null)
+            {
+                dr.ForceImpulse(dirX, dirY, force, duration);
+            }
+        }
     }
 
     public GameObject GetMyPlayer()

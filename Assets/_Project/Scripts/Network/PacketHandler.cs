@@ -293,6 +293,25 @@ public class PacketHandler
         }
     }
 
+    public static void Handle_S_Knockback(IMessage packet)
+    {
+        S_Knockback res = (S_Knockback)packet;
+        Debug.Log(
+            $"[PacketHandler] Knockback: ObjectID={res.ObjectId}, Dir=({res.DirX:F2},{res.DirY:F2}), Force={res.Force}"
+        );
+
+        if (ObjectManager.Instance != null)
+        {
+            ObjectManager.Instance.ApplyKnockback(
+                res.ObjectId,
+                res.DirX,
+                res.DirY,
+                res.Force,
+                res.Duration
+            );
+        }
+    }
+
     public static void Handle_S_PlayerDowned(IMessage packet)
     {
         S_PlayerDowned res = (S_PlayerDowned)packet;
@@ -388,6 +407,7 @@ public class PacketHandler
             $"[PacketHandler] HP Change: {res.CurrentHp}/{res.MaxHp} for ObjectID: {res.ObjectId}"
         );
 
+        // 1. Update UI (My Player Only)
         if (res.ObjectId == NetworkManager.Instance.MyPlayerId)
         {
             if (PlayerHUD.Instance != null)
@@ -395,13 +415,11 @@ public class PacketHandler
                 PlayerHUD.Instance.UpdateHP((int)res.CurrentHp, (int)res.MaxHp);
             }
         }
-        else
+
+        // 2. Update World Object (Effect & HP Bar) - For Everyone (including me)
+        if (ObjectManager.Instance != null)
         {
-            // Update remote object's HP bar
-            if (ObjectManager.Instance != null)
-            {
-                ObjectManager.Instance.UpdateHp(res.ObjectId, res.CurrentHp, res.MaxHp);
-            }
+            ObjectManager.Instance.UpdateHp(res.ObjectId, res.CurrentHp, res.MaxHp);
         }
     }
 }

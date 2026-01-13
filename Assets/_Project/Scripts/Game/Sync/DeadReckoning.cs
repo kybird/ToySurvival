@@ -37,6 +37,10 @@ public class DeadReckoning : MonoBehaviour
     private SpriteRenderer _spriteRenderer;
     private Animator _animator;
 
+    // Knockback Impulse
+    private Vector2 _impulseVel = Vector2.zero;
+    private float _impulseEndTime = 0f;
+
     private void Awake()
     {
         _spriteRenderer = GetComponentInChildren<SpriteRenderer>();
@@ -131,8 +135,31 @@ public class DeadReckoning : MonoBehaviour
         }
     }
 
+    public void ForceImpulse(float dirX, float dirY, float force, float duration)
+    {
+        _snapshots.Clear(); // 보간 버퍼 초기화
+        _impulseVel = new Vector2(dirX, dirY) * force;
+        _impulseEndTime = Time.time + duration;
+        Debug.Log(
+            $"[DeadReckoning] ForceImpulse: Dir=({dirX:F2},{dirY:F2}), Force={force}, Duration={duration}"
+        );
+    }
+
     void Update()
     {
+        // Knockback Impulse 처리 (보간 우회)
+        if (Time.time < _impulseEndTime)
+        {
+            float dt = Time.deltaTime;
+            Vector3 currentPos = transform.position;
+            transform.position = new Vector3(
+                currentPos.x + _impulseVel.x * dt,
+                currentPos.y + _impulseVel.y * dt,
+                0
+            );
+            return; // 보간 로직 스킵
+        }
+
         if (!_hasReceivedUpdate || TickManager.Instance == null || _snapshots.Count == 0)
             return;
 
