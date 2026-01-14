@@ -422,4 +422,21 @@ public class PacketHandler
             ObjectManager.Instance.UpdateHp(res.ObjectId, res.CurrentHp, res.MaxHp);
         }
     }
+
+    public static void Handle_S_LevelUpOption(IMessage packet)
+    {
+        S_LevelUpOption res = (S_LevelUpOption)packet;
+        Debug.Log($"[PacketHandler] Level Up Options Received! Count: {res.Options.Count}");
+
+        foreach (var opt in res.Options)
+        {
+            Debug.Log($"- [{opt.OptionId}] {opt.Name}: {opt.Desc} (New: {opt.IsNew})");
+        }
+
+        // TODO: UI 연동. 현재는 테스트를 위해 0번 옵션 자동 선택
+        Debug.Log("[PacketHandler] Auto-selecting Option 0 for testing...");
+        C_SelectLevelUp selectPkt = new C_SelectLevelUp();
+        selectPkt.OptionIndex = 0;
+        NetworkManager.Instance.Send(selectPkt);
+    }
 }

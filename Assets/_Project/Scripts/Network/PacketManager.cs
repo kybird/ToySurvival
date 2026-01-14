@@ -97,6 +97,12 @@ namespace Network
 
             _onRecv.Add((ushort)Protocol.MsgId.SHpChange, MakePacket<S_HpChange>);
             _handler.Add((ushort)Protocol.MsgId.SHpChange, PacketHandler.Handle_S_HpChange);
+
+            _onRecv.Add((ushort)Protocol.MsgId.SLevelUpOption, MakePacket<S_LevelUpOption>);
+            _handler.Add(
+                (ushort)Protocol.MsgId.SLevelUpOption,
+                PacketHandler.Handle_S_LevelUpOption
+            );
         }
 
         public void OnRecvPacket(ArraySegment<byte> buffer, Action<IMessage> onRecvCallback = null)
