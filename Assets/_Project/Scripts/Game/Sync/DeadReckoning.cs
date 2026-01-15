@@ -27,6 +27,9 @@ public class DeadReckoning : MonoBehaviour
     public int LastReceivedTick { get; private set; }
     private double _lastSnapshotTime = 0;
 
+    // Rendering Delay Policy
+    private RenderDelayMode _delayMode = RenderDelayMode.Adaptive; // 기본값: Adaptive
+
     // Adaptive Interpolation
     private float _avgRTT = 0.03f; // 초기값 30ms
     private float _rttVar = 0f; // RTT 분산 (Jitter Estimator)
@@ -70,6 +73,25 @@ public class DeadReckoning : MonoBehaviour
         _currentDelay = Mathf.Lerp(_currentDelay, targetDelay, 0.05f);
         if (_currentDelay < MIN_DELAY)
             _currentDelay = MIN_DELAY;
+    }
+
+    /// <summary>
+    /// 렌더링 지연 정책을 초기화합니다.
+    /// ObjectManager에서 객체 타입에 따라 호출됩니다.
+    /// </summary>
+    public void Initialize(RenderDelayMode delayMode)
+    {
+        _delayMode = delayMode;
+    }
+
+    /// <summary>
+    /// 스냅샷 버퍼를 정리합니다.
+    /// Despawn 시 호출하여 늦게 도착한 패킷으로 인한 유령 이동을 방지합니다.
+    /// </summary>
+    public void ClearSnapshots()
+    {
+        _snapshots.Clear();
+        _hasReceivedUpdate = false;
     }
 
     public void UpdateFromServer(float x, float y, float vx, float vy, uint serverTick)
@@ -187,9 +209,14 @@ public class DeadReckoning : MonoBehaviour
         // (InitGameAnchor에서 서버 틱 기준으로 초기화됨)
         float currentGameTick = TickManager.Instance.EstimateServerTickFloat();
 
-        // 보간 지연 적용 (Adaptive Delay)
-        // Delay (Seconds) -> Delay (Ticks)
-        float delayTicks = _currentDelay * TickManager.Instance.TickRate;
+        // 보간 지연 적용 (Rendering Delay Policy)
+        float delayTicks = _delayMode switch
+        {
+            RenderDelayMode.None => 0f,
+            RenderDelayMode.Minimal => 1f,
+            RenderDelayMode.Adaptive => _currentDelay * TickManager.Instance.TickRate,
+            _ => _currentDelay * TickManager.Instance.TickRate,
+        };
         float renderTick = currentGameTick - delayTicks;
 
         // [DEBUG] 틱 동기화 진단
@@ -210,7 +237,18 @@ public class DeadReckoning : MonoBehaviour
         // 아직 과거 데이터만 있음
         if (renderTick <= first.time)
         {
-            nextPos = first.pos;
+            // [Fix] None/Minimal 모드에서는 첫 스냅샷을 "현재"로 간주하여 즉시 예측 시작
+            if (_delayMode == RenderDelayMode.None || _delayMode == RenderDelayMode.Minimal)
+            {
+                float dt = renderTick - first.time;
+                if (dt < 0)
+                    dt = 0; // 음수 방지
+                nextPos = first.pos + first.vel * dt;
+            }
+            else
+            {
+                nextPos = first.pos; // 기존 동작 유지 (Adaptive)
+            }
         }
         // 최신 스냅샷보다 미래 → extrapolation
         else if (renderTick >= last.time)

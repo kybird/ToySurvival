@@ -219,9 +219,20 @@ public class ObjectManager : MonoBehaviour
             if (csp != null)
                 Destroy(csp);
 
-            // [Important] Initialize immediately with Velocity for correct initial rotation
+            // [Important] 렌더링 정책 결정 (타입 기반)
+            // ObjectManager는 타입을 알고, DeadReckoning은 정책만 받음
+            RenderDelayMode delayMode = info.Type switch
+            {
+                ObjectType.Projectile => RenderDelayMode.None,
+                ObjectType.Monster => RenderDelayMode.Adaptive,
+                ObjectType.Player => RenderDelayMode.Adaptive,
+                _ => RenderDelayMode.Adaptive,
+            };
+
+            // [Important] Initialize immediately with Velocity and Delay Policy
             if (serverTick > 0 && dr != null)
             {
+                dr.Initialize(delayMode);
                 dr.UpdateFromServer(info.X, info.Y, info.Vx, info.Vy, serverTick);
             }
         }
@@ -272,6 +283,13 @@ public class ObjectManager : MonoBehaviour
     {
         if (_objects.TryGetValue(objectId, out GameObject go))
         {
+            // [Fix] DeadReckoning 버퍼 정리 (늦은 패킷으로 인한 유령 이동 방지)
+            var dr = go.GetComponent<DeadReckoning>();
+            if (dr != null)
+            {
+                dr.ClearSnapshots();
+            }
+
             Destroy(go);
             _objects.Remove(objectId);
         }
