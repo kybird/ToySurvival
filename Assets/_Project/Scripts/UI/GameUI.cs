@@ -17,6 +17,12 @@ public class GameUI : MonoBehaviour
     [Header("Notification")]
     public Text notificationText;
 
+    [Header("Level Up UI")]
+    public GameObject levelUpPanel;
+
+    private Protocol.S_LevelUpOption _currentOptions;
+    private bool _isLevelUpShowing = false;
+
     private void Awake()
     {
         if (Instance == null)
@@ -153,5 +159,59 @@ public class GameUI : MonoBehaviour
         yield return new WaitForSeconds(2.0f);
 
         notificationText.gameObject.SetActive(false);
+    }
+
+    public void ShowLevelUpOptions(Protocol.S_LevelUpOption res)
+    {
+        _currentOptions = res;
+        _isLevelUpShowing = true;
+
+        if (levelUpPanel != null)
+        {
+            levelUpPanel.SetActive(true);
+            // 실 구현 시에는 여기서 버튼들을 동적으로 생성하거나 텍스트를 채워야 합니다.
+        }
+
+        Debug.Log("[GameUI] Level Up UI Activated. Check OnGUI for options if panel is missing.");
+    }
+
+    public void SelectLevelUpOption(int index)
+    {
+        if (_currentOptions == null || index < 0 || index >= _currentOptions.Options.Count)
+            return;
+
+        Debug.Log($"[GameUI] Selecting Option {index}: {_currentOptions.Options[index].Name}");
+
+        Protocol.C_SelectLevelUp selectPkt = new Protocol.C_SelectLevelUp();
+        selectPkt.OptionIndex = index;
+        NetworkManager.Instance.Send(selectPkt);
+
+        _isLevelUpShowing = false;
+        if (levelUpPanel != null)
+            levelUpPanel.SetActive(false);
+    }
+
+    private void OnGUI()
+    {
+        if (!_isLevelUpShowing || _currentOptions == null)
+            return;
+
+        // 중앙에 레벨업 선택창 그리기
+        float width = 400;
+        float height = 300;
+        float x = (Screen.width - width) / 2;
+        float y = (Screen.height - height) / 2;
+
+        GUI.Box(new Rect(x, y, width, height), "LEVEL UP!");
+
+        for (int i = 0; i < _currentOptions.Options.Count; i++)
+        {
+            var opt = _currentOptions.Options[i];
+            string btnText = $"[{i}] {opt.Name}\n{opt.Desc}";
+            if (GUI.Button(new Rect(x + 20, y + 40 + i * 80, width - 40, 70), btnText))
+            {
+                SelectLevelUpOption(i);
+            }
+        }
     }
 }

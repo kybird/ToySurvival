@@ -433,10 +433,19 @@ public class PacketHandler
             Debug.Log($"- [{opt.OptionId}] {opt.Name}: {opt.Desc} (New: {opt.IsNew})");
         }
 
-        // TODO: UI 연동. 현재는 테스트를 위해 0번 옵션 자동 선택
-        Debug.Log("[PacketHandler] Auto-selecting Option 0 for testing...");
-        C_SelectLevelUp selectPkt = new C_SelectLevelUp();
-        selectPkt.OptionIndex = 0;
-        NetworkManager.Instance.Send(selectPkt);
+        // UI 연동
+        if (GameUI.Instance != null)
+        {
+            GameUI.Instance.ShowLevelUpOptions(res);
+        }
+        else
+        {
+            Debug.LogWarning(
+                "[PacketHandler] GameUI.Instance is null. Auto-selecting Option 0 for fallback..."
+            );
+            C_SelectLevelUp selectPkt = new C_SelectLevelUp();
+            selectPkt.OptionIndex = 0;
+            NetworkManager.Instance.Send(selectPkt);
+        }
     }
 }
