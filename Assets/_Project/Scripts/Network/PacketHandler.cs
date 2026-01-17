@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Core;
 using Google.Protobuf;
 using Network;
@@ -383,6 +384,22 @@ public class PacketHandler
         S_PlayerDead res = (S_PlayerDead)packet;
         Debug.Log($"[PacketHandler] Player Dead: {res.PlayerId}");
 
+        if (NetworkManager.Instance.MyPlayerId == res.PlayerId)
+        {
+            Debug.Log("[PacketHandler] I died. Triggering Game Over UI.");
+            if (GameUI.Instance != null)
+            {
+                // Show Game Over UI (False = Lose)
+                GameUI.Instance.ShowGameOver(false, 0);
+            }
+            else
+            {
+                Debug.LogError(
+                    "[PacketHandler] CRITICAL: GameUI.Instance is NULL! Cannot show Game Over UI."
+                );
+            }
+        }
+
         if (ObjectManager.Instance != null)
         {
             ObjectManager.Instance.OnPlayerDead(res.PlayerId);
@@ -433,19 +450,39 @@ public class PacketHandler
             Debug.Log($"- [{opt.OptionId}] {opt.Name}: {opt.Desc} (New: {opt.IsNew})");
         }
 
-        // UI 연동
-        if (GameUI.Instance != null)
+        float timeout = res.TimeoutSeconds > 0 ? res.TimeoutSeconds : 30f;
+
+        if (LevelUpUI.Instance != null)
         {
-            GameUI.Instance.ShowLevelUpOptions(res);
+            var options = new List<Protocol.LevelUpOption>(res.Options);
+            LevelUpUI.Instance.Show(options, timeout);
         }
         else
         {
-            Debug.LogWarning(
-                "[PacketHandler] GameUI.Instance is null. Auto-selecting Option 0 for fallback..."
+            Debug.LogError(
+                "[PacketHandler] CRITICAL: LevelUpUI.Instance is NULL! Cannot show Level Up Options."
             );
+
+            // Auto-select option 0 as failsafe
+            Debug.LogWarning("[PacketHandler] Auto-selecting Option 0 due to missing UI...");
             C_SelectLevelUp selectPkt = new C_SelectLevelUp();
             selectPkt.OptionIndex = 0;
             NetworkManager.Instance.Send(selectPkt);
+        }
+    }
+
+    public static void Handle_S_WaveNotify(IMessage packet)
+    {
+        S_WaveNotify res = (S_WaveNotify)packet;
+        Debug.Log($"[PacketHandler] Wave Notify: {res.Title}, Duration: {res.DurationSeconds}s");
+
+        if (WaveNotificationUI.Instance != null)
+        {
+            WaveNotificationUI.Instance.Show(res.Title, res.DurationSeconds);
+        }
+        else if (GameUI.Instance != null)
+        {
+            GameUI.Instance.ShowNotification(res.Title, Color.cyan);
         }
     }
 }

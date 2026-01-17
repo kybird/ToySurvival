@@ -138,9 +138,9 @@ public class DeadReckoning : MonoBehaviour
         float diff = Vector2.Distance(currentRenderPos, snap.pos);
         if (diff > 0.3f) // 0.3 유닛 이상 차이 나면 로그 (임계값 축소)
         {
-            Debug.LogWarning(
-                $"[DeadReckoning] ID={gameObject.name} | ServerPos=({snap.pos.x:F2},{snap.pos.y:F2}) | RenderPos=({currentRenderPos.x:F2},{currentRenderPos.y:F2}) | Diff={diff:F2} | Vel=({snap.vel.x:F2},{snap.vel.y:F2}) | Delay={_currentDelay:F3}s"
-            );
+            // Debug.LogWarning(
+            //     $"[DeadReckoning] ID={gameObject.name} | ServerPos=({snap.pos.x:F2},{snap.pos.y:F2}) | RenderPos=({currentRenderPos.x:F2},{currentRenderPos.y:F2}) | Diff={diff:F2} | Vel=({snap.vel.x:F2},{snap.vel.y:F2}) | Delay={_currentDelay:F3}s"
+            // );
         }
 
         // 정렬 보장 (tick 오름차순)
@@ -254,10 +254,10 @@ public class DeadReckoning : MonoBehaviour
         else if (renderTick >= last.time)
         {
             float dt = renderTick - last.time;
-            // Delta Sync로 인해 패킷 간격이 클 수 있음 (최대 30틱)
-            // Extrapolation을 2틱(80ms)으로 제한하여 과도한 예측 방지
-            if (dt > 2f)
-                dt = 2f;
+            // Delta Sync & 3 TPS Optimization (Packet Interval ~8 ticks)
+            // Allow Extrapolation up to 15 ticks (approx 0.6s) to prevent stuttering
+            if (dt > 15f)
+                dt = 15f;
             nextPos = last.pos + last.vel * dt;
         }
         else

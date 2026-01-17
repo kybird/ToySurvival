@@ -17,11 +17,13 @@ public class GameUI : MonoBehaviour
     [Header("Notification")]
     public Text notificationText;
 
-    [Header("Level Up UI")]
-    public GameObject levelUpPanel;
+    // [Header("Level Up UI")] - Removed: Maintained by LevelUpUI.cs
+    // public GameObject levelUpPanel;
 
-    private Protocol.S_LevelUpOption _currentOptions;
-    private bool _isLevelUpShowing = false;
+    // private Protocol.S_LevelUpOption _currentOptions;
+    // private bool _isLevelUpShowing = false;
+
+    // ... (LevelUp Fallback methods removed for clarity)
 
     private void Awake()
     {
@@ -82,10 +84,18 @@ public class GameUI : MonoBehaviour
     /// </summary>
     public void ShowGameOver(bool isWin, long survivedTimeMs)
     {
+        Debug.Log($"[GameUI] ShowGameOver Called. IsWin: {isWin}, Survived: {survivedTimeMs}ms");
+
         if (gameEndPanel == null)
+        {
+            Debug.LogError(
+                "[GameUI] CRITICAL ERROR: gameEndPanel is not assigned in the Inspector!"
+            );
             return;
+        }
 
         gameEndPanel.SetActive(true);
+        Debug.Log("[GameUI] gameEndPanel SetActive(true) called.");
 
         if (isWin)
         {
@@ -127,18 +137,25 @@ public class GameUI : MonoBehaviour
     /// <summary>
     /// 나가기 버튼 클릭 시 로비로 복귀
     /// </summary>
+    /// <summary>
+    /// 나가기 버튼 클릭 시 로비로 복귀
+    /// </summary>
     private void OnExitButtonClicked()
     {
         Debug.Log("[GameUI] Exit button clicked. Returning to Lobby...");
 
-        // 게임 상태 초기화
+        // 1. 서버에 퇴장 알림 (패킷 전송을 멈추게 함)
+        if (NetworkManager.Instance != null && NetworkManager.Instance.IsConnected)
+        {
+            Protocol.C_LeaveRoom leavePkt = new Protocol.C_LeaveRoom();
+            NetworkManager.Instance.Send(leavePkt);
+        }
+
+        // 2. 게임 상태 초기화 및 씬 전환
         if (GameManager.Instance != null)
         {
             GameManager.Instance.TriggerEvent(StateEvent.LeaveRoom);
         }
-
-        // 로비 씬으로 이동 (씬 이름은 프로젝트에 맞게 조정)
-        // SceneManager.LoadScene("LobbyScene");
     }
 
     public void ShowNotification(string message, Color color)
@@ -161,57 +178,20 @@ public class GameUI : MonoBehaviour
         notificationText.gameObject.SetActive(false);
     }
 
+    /* LevelUp Logic moved to LevelUpUI.cs
     public void ShowLevelUpOptions(Protocol.S_LevelUpOption res)
     {
-        _currentOptions = res;
-        _isLevelUpShowing = true;
-
-        if (levelUpPanel != null)
-        {
-            levelUpPanel.SetActive(true);
-            // 실 구현 시에는 여기서 버튼들을 동적으로 생성하거나 텍스트를 채워야 합니다.
-        }
-
-        Debug.Log("[GameUI] Level Up UI Activated. Check OnGUI for options if panel is missing.");
+        // Legacy Fallback removed
     }
 
     public void SelectLevelUpOption(int index)
     {
-        if (_currentOptions == null || index < 0 || index >= _currentOptions.Options.Count)
-            return;
-
-        Debug.Log($"[GameUI] Selecting Option {index}: {_currentOptions.Options[index].Name}");
-
-        Protocol.C_SelectLevelUp selectPkt = new Protocol.C_SelectLevelUp();
-        selectPkt.OptionIndex = index;
-        NetworkManager.Instance.Send(selectPkt);
-
-        _isLevelUpShowing = false;
-        if (levelUpPanel != null)
-            levelUpPanel.SetActive(false);
+        // Legacy Fallback removed
     }
 
     private void OnGUI()
     {
-        if (!_isLevelUpShowing || _currentOptions == null)
-            return;
-
-        // 중앙에 레벨업 선택창 그리기
-        float width = 400;
-        float height = 300;
-        float x = (Screen.width - width) / 2;
-        float y = (Screen.height - height) / 2;
-
-        GUI.Box(new Rect(x, y, width, height), "LEVEL UP!");
-
-        for (int i = 0; i < _currentOptions.Options.Count; i++)
-        {
-            var opt = _currentOptions.Options[i];
-            string btnText = $"[{i}] {opt.Name}\n{opt.Desc}";
-            if (GUI.Button(new Rect(x + 20, y + 40 + i * 80, width - 40, 70), btnText))
-            {
-                SelectLevelUpOption(i);
-            }
-        }
+        // Legacy Fallback removed
     }
+    */
 }

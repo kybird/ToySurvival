@@ -16,7 +16,7 @@ public class ObjectManager : MonoBehaviour
 
     private Material _flashMaterial;
 
-    void Awake()
+    private void Awake()
     {
         if (Instance == null)
         {
@@ -45,46 +45,6 @@ public class ObjectManager : MonoBehaviour
         {
             // 이미 존재하면 자신을 파괴 (싱글톤 유지)
             Destroy(gameObject);
-        }
-    }
-
-    private System.Collections.IEnumerator CoFlashColor(
-        SpriteRenderer renderer,
-        Color flashColor,
-        float duration
-    )
-    {
-        if (renderer == null)
-            yield break;
-        Color originalColor = renderer.color;
-        renderer.color = flashColor;
-        yield return new WaitForSeconds(duration);
-        if (renderer != null)
-            renderer.color = originalColor;
-    }
-
-    private System.Collections.IEnumerator CoFlashColorMesh(
-        MeshRenderer renderer,
-        Color flashColor,
-        float duration
-    )
-    {
-        if (renderer == null || _flashMaterial == null)
-            yield break;
-
-        // 1. 백업: 원래 매테리얼 (SharedMaterial 사용으로 인스턴싱 방지)
-        Material originalMat = renderer.sharedMaterial;
-
-        // 2. 교체: 캐싱된 플래시 매테리얼 사용 (GC 없음)
-        renderer.sharedMaterial = _flashMaterial;
-
-        // 3. 대기
-        yield return new WaitForSeconds(duration);
-
-        // 4. 원복
-        if (renderer != null)
-        {
-            renderer.sharedMaterial = originalMat;
         }
     }
 
@@ -250,25 +210,11 @@ public class ObjectManager : MonoBehaviour
         if (_objects.TryGetValue(objectId, out GameObject go))
         {
             // 1. Flash Effect (Damage Feedback)
-            var spriteRenderer = go.GetComponentInChildren<SpriteRenderer>();
-            if (spriteRenderer != null)
-            {
-                // Debug.Log($"[ObjectManager] Found SpriteRenderer on {go.name}");
-                StartCoroutine(CoFlashColor(spriteRenderer, Color.red, 0.1f));
-            }
-            else
-            {
-                var meshRenderer = go.GetComponentInChildren<MeshRenderer>();
-                if (meshRenderer != null)
-                {
-                    Debug.Log($"[ObjectManager] Found MeshRenderer on {go.name}. Starting Flash.");
-                    StartCoroutine(CoFlashColorMesh(meshRenderer, Color.red, 0.1f));
-                }
-                else
-                {
-                    Debug.LogWarning($"[ObjectManager] No Renderer found on {go.name} to flash!");
-                }
-            }
+            var flash = go.GetComponent<SimpleFlash>();
+            if (flash == null)
+                flash = go.AddComponent<SimpleFlash>();
+
+            flash.Flash(Color.red, _flashMaterial, 0.1f);
 
             // 2. Update HP Bar
             HpBar hpBar = go.GetComponentInChildren<HpBar>();
@@ -317,11 +263,11 @@ public class ObjectManager : MonoBehaviour
         if (_objects.TryGetValue(targetId, out GameObject go))
         {
             // 1. Flash Effect
-            var renderer = go.GetComponentInChildren<SpriteRenderer>();
-            if (renderer != null)
-            {
-                StartCoroutine(CoFlashColor(renderer, Color.red, 0.1f));
-            }
+            var flash = go.GetComponent<SimpleFlash>();
+            if (flash == null)
+                flash = go.AddComponent<SimpleFlash>();
+
+            flash.Flash(Color.red, _flashMaterial, 0.1f);
 
             // 2. Spawn Damage Text
             // Load "Prefabs/DamageText"

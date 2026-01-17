@@ -103,6 +103,12 @@ namespace Network
                 (ushort)Protocol.MsgId.SLevelUpOption,
                 PacketHandler.Handle_S_LevelUpOption
             );
+
+            _onRecv.Add((ushort)Protocol.MsgId.SWaveNotify, MakePacket<S_WaveNotify>);
+            _handler.Add(
+                (ushort)Protocol.MsgId.SWaveNotify,
+                PacketHandler.Handle_S_WaveNotify
+            );
         }
 
         public void OnRecvPacket(ArraySegment<byte> buffer, Action<IMessage> onRecvCallback = null)

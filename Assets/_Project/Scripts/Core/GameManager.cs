@@ -1,9 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Core;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Core;
 
 /// <summary>
 /// 앱 전체 상태를 중앙에서 관리하는 싱글톤 매니저.
@@ -69,27 +69,59 @@ public class GameManager : MonoBehaviour
         _transitionTable = new Dictionary<(GameState, StateEvent), Transition>
         {
             // None -> Login
-            { (GameState.None, StateEvent.AppStart), new Transition { NextState = GameState.Login } },
-
+            {
+                (GameState.None, StateEvent.AppStart),
+                new Transition { NextState = GameState.Login }
+            },
             // Login -> Lobby
-            { (GameState.Login, StateEvent.LoginSuccess), new Transition { NextState = GameState.Lobby, SceneName = "LobbyScene" } },
-            { (GameState.Login, StateEvent.LoginFail), new Transition { NextState = GameState.Login } }, // Stay
-
+            {
+                (GameState.Login, StateEvent.LoginSuccess),
+                new Transition { NextState = GameState.Lobby, SceneName = "LobbyScene" }
+            },
+            {
+                (GameState.Login, StateEvent.LoginFail),
+                new Transition { NextState = GameState.Login }
+            }, // Stay
             // Lobby -> Loading -> InGame
-            { (GameState.Lobby, StateEvent.JoinRoomSuccess), new Transition { NextState = GameState.Loading, SceneName = "GameScene" } },
-            { (GameState.Lobby, StateEvent.Disconnect), new Transition { NextState = GameState.Login, SceneName = "LoginScene" } },
-
+            {
+                (GameState.Lobby, StateEvent.JoinRoomSuccess),
+                new Transition { NextState = GameState.Loading, SceneName = "GameScene" }
+            },
+            {
+                (GameState.Lobby, StateEvent.Disconnect),
+                new Transition { NextState = GameState.Login, SceneName = "LoginScene" }
+            },
             // Loading -> InGame or Fallback
-            { (GameState.Loading, StateEvent.SceneLoadComplete), new Transition { NextState = GameState.InGame } },
-            { (GameState.Loading, StateEvent.Timeout), new Transition { NextState = GameState.Lobby, SceneName = "LobbyScene" } },
-
+            {
+                (GameState.Loading, StateEvent.SceneLoadComplete),
+                new Transition { NextState = GameState.InGame }
+            },
+            {
+                (GameState.Loading, StateEvent.Timeout),
+                new Transition { NextState = GameState.Lobby, SceneName = "LobbyScene" }
+            },
+            {
+                (GameState.Loading, StateEvent.Disconnect),
+                new Transition { NextState = GameState.Login, SceneName = "LoginScene" }
+            },
             // InGame -> Lobby
-            { (GameState.InGame, StateEvent.LeaveRoom), new Transition { NextState = GameState.Lobby, SceneName = "LobbyScene" } },
-            { (GameState.InGame, StateEvent.Disconnect), new Transition { NextState = GameState.Login, SceneName = "LoginScene" } },
-
+            {
+                (GameState.InGame, StateEvent.LeaveRoom),
+                new Transition { NextState = GameState.Lobby, SceneName = "LobbyScene" }
+            },
+            {
+                (GameState.InGame, StateEvent.Disconnect),
+                new Transition { NextState = GameState.Login, SceneName = "LoginScene" }
+            },
             // Any -> Login (Kick)
-            { (GameState.Lobby, StateEvent.Kick), new Transition { NextState = GameState.Login, SceneName = "LoginScene" } },
-            { (GameState.InGame, StateEvent.Kick), new Transition { NextState = GameState.Login, SceneName = "LoginScene" } },
+            {
+                (GameState.Lobby, StateEvent.Kick),
+                new Transition { NextState = GameState.Login, SceneName = "LoginScene" }
+            },
+            {
+                (GameState.InGame, StateEvent.Kick),
+                new Transition { NextState = GameState.Login, SceneName = "LoginScene" }
+            },
         };
     }
     #endregion
@@ -104,10 +136,12 @@ public class GameManager : MonoBehaviour
 
         if (_transitionTable.TryGetValue(key, out Transition transition))
         {
-            Debug.Log($"[GameManager] State Transition: {CurrentState} --[{evt}]--> {transition.NextState}");
-            
+            Debug.Log(
+                $"[GameManager] State Transition: {CurrentState} --[{evt}]--> {transition.NextState}"
+            );
+
             GameState oldState = CurrentState;
-            
+
             // 씬 전환이 필요한 경우
             if (!string.IsNullOrEmpty(transition.SceneName))
             {
@@ -136,7 +170,8 @@ public class GameManager : MonoBehaviour
     {
         foreach (var state in allowedStates)
         {
-            if (CurrentState == state) return true;
+            if (CurrentState == state)
+                return true;
         }
 
         HandleMismatch(packetId);
@@ -148,11 +183,12 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void SetState(GameState newState)
     {
-        if (CurrentState == newState) return;
+        if (CurrentState == newState)
+            return;
 
         GameState oldState = CurrentState;
         CurrentState = newState;
-        
+
         Debug.Log($"[GameManager] State Changed: {oldState} -> {newState}");
         OnStateChanged?.Invoke(oldState, newState);
     }
@@ -165,17 +201,14 @@ public class GameManager : MonoBehaviour
         {
             StopCoroutine(_loadingCoroutine);
         }
-        
+
         _loadingCoroutine = StartCoroutine(CoLoadScene(targetState, sceneName));
     }
 
     private IEnumerator CoLoadScene(GameState targetState, string sceneName)
     {
-        // 1. Loading 상태로 전환
-        if (targetState != GameState.Loading)
-        {
-            SetState(GameState.Loading);
-        }
+        // 1. Loading 상태로 전환 (무조건)
+        SetState(GameState.Loading);
 
         // 2. 로딩 UI 표시
         if (LoadingManager.Instance != null)
@@ -244,7 +277,18 @@ public class GameManager : MonoBehaviour
 
         if (count >= MISMATCH_TERMINATE_THRESHOLD)
         {
-            Debug.LogError($"[GameManager] Packet {packetId} mismatch exceeded threshold. Terminating session.");
+            // [Fix] LoadingState에서는 패킷 늦게 도착할 수 있으므로 강제 종료하지 않음
+            if (CurrentState == GameState.Loading)
+            {
+                Debug.LogWarning(
+                    $"[GameManager] Packet {packetId} mismatch in LOADING state. Ignoring (Count: {count})."
+                );
+                return;
+            }
+
+            Debug.LogError(
+                $"[GameManager] Packet {packetId} mismatch exceeded threshold. Terminating session."
+            );
             // NetworkManager.Instance.Disconnect();
             TriggerEvent(StateEvent.Disconnect);
         }

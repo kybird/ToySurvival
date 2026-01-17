@@ -17,7 +17,9 @@ public class ClientSidePredictionController : MonoBehaviour
     public float moveSpeed = 5f;
 
     [Header("Network")]
-    public float sendInterval = 0.1f; // 전송 샘플링 전용
+    // [Sync Fix] 3Hz Heartbeat (User Requirement)
+    // We rely on "Send on Change" for responsiveness.
+    public float sendInterval = 0.333f;
 
     [Header("Correction")]
     public float correctionSpeed = 8f;
@@ -60,8 +62,11 @@ public class ClientSidePredictionController : MonoBehaviour
     {
         _localSimTick++;
 
-        // 1️⃣ 입력 히스토리 기록 (절대 압축 금지)
-        _pendingInputs.Enqueue(new InputCmd { tick = _localSimTick, dir = _inputDir });
+        Vector2 effectiveDir = _inputDir;
+        if (LevelUpUI.Instance != null && LevelUpUI.Instance.IsActive)
+            effectiveDir = Vector2.zero;
+
+        _pendingInputs.Enqueue(new InputCmd { tick = _localSimTick, dir = effectiveDir });
 
         while (_pendingInputs.Count > _maxHistorySize)
             _pendingInputs.Dequeue();
@@ -69,8 +74,7 @@ public class ClientSidePredictionController : MonoBehaviour
         // 2️⃣ 보간용 스냅샷
         _prevLogicPos = _logicPos;
 
-        // 3️⃣ 이동
-        SimulateMove(_inputDir);
+        SimulateMove(effectiveDir);
     }
 
     private void SimulateMove(Vector2 dir)
@@ -113,20 +117,30 @@ public class ClientSidePredictionController : MonoBehaviour
         if (NetworkManager.Instance == null || !NetworkManager.Instance.IsConnected)
             return;
 
-        if (Time.time - _lastSendTime < sendInterval && _inputDir == _lastSentDir)
+        Vector2 sendDir = _inputDir;
+        if (LevelUpUI.Instance != null && LevelUpUI.Instance.IsActive)
+            sendDir = Vector2.zero;
+
+        // [Sync Fix] Send ONLY if:
+        // 1. Time overlapped (Heartbeat)
+        // 2. OR Direction changed (Responsiveness)
+        bool isTimeOver = (Time.unscaledTime - _lastSendTime >= sendInterval);
+        bool isDirChanged = (sendDir != _lastSentDir);
+
+        if (!isTimeOver && !isDirChanged)
             return;
 
         C_MoveInput pkt = new()
         {
-            DirX = Mathf.RoundToInt(_inputDir.x),
-            DirY = Mathf.RoundToInt(_inputDir.y),
-            ClientTick = _localSimTick, // 마지막 시뮬 tick
+            DirX = Mathf.RoundToInt(sendDir.x),
+            DirY = Mathf.RoundToInt(sendDir.y),
+            ClientTick = _localSimTick,
         };
 
         NetworkManager.Instance.Send(pkt);
 
-        _lastSendTime = Time.time;
-        _lastSentDir = _inputDir;
+        _lastSendTime = Time.unscaledTime;
+        _lastSentDir = sendDir;
     }
 
     // ===============================
@@ -152,9 +166,16 @@ public class ClientSidePredictionController : MonoBehaviour
         Vector2 currentPos = _logicPos;
         Vector2 error = idealPos - currentPos;
 
+        // Debugging large errors
+        if (error.magnitude > 0.5f)
+        {
+            // Debug.LogWarning($"[CSP] Hard Divergence: Error={error.magnitude:F2} | Pending={_pendingInputs.Count}");
+        }
+
         // 3️⃣ Hard snap
         if (error.magnitude > snapThreshold)
         {
+            // Debug.LogWarning($"[CSP] Snap! Error={error.magnitude:F2}");
             _logicPos = idealPos;
             _prevLogicPos = _logicPos;
             _pendingCorrection = Vector2.zero;

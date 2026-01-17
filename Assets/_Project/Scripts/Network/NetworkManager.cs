@@ -39,6 +39,7 @@ public class NetworkManager : MonoBehaviour
 
     void Awake()
     {
+        Time.timeScale = 1f;
         Debug.Log($"[NetworkManager] Awake called. Current instance: {(_instance != null ? "EXISTS" : "NULL")}");
         
         if (_instance == null)
