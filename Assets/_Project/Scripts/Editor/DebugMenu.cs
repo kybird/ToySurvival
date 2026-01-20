@@ -1,7 +1,7 @@
-using UnityEditor;
-using UnityEngine;
 using System.Collections.Generic;
 using Protocol;
+using UnityEditor;
+using UnityEngine;
 
 public class DebugMenu
 {
@@ -21,7 +21,7 @@ public class DebugMenu
         }
 
         List<LevelUpOption> options = new List<LevelUpOption>();
-        for(int i=0; i<3; i++)
+        for (int i = 0; i < 3; i++)
         {
             LevelUpOption opt = new LevelUpOption();
             opt.OptionId = i;
@@ -31,7 +31,7 @@ public class DebugMenu
             options.Add(opt);
         }
 
-        LevelUpUI.Instance.Show(options, 30f);
+        LevelUpUI.Instance.Show(options, 30f, 5.0f);
         Debug.Log("Forced LevelUpUI Show");
     }
 }

@@ -455,7 +455,8 @@ public class PacketHandler
         if (LevelUpUI.Instance != null)
         {
             var options = new List<Protocol.LevelUpOption>(res.Options);
-            LevelUpUI.Instance.Show(options, timeout);
+            float slowRadius = res.SlowRadius > 0 ? res.SlowRadius : 5.0f;
+            LevelUpUI.Instance.Show(options, timeout, slowRadius);
         }
         else
         {
