@@ -77,6 +77,11 @@ public class ObjectManager : MonoBehaviour
             // Projectile_1 등 타입별 프리팹 지원
             resourcePath = $"Prefabs/Projectile_{info.TypeId}";
         }
+        else if (info.Type == ObjectType.Item)
+        {
+            // Item(ExpGem) 프리팹 로드
+            resourcePath = "Prefabs/Item";
+        }
 
         Debug.Log($"[ObjectManager] Try to load resource: '{resourcePath}' for Type: {info.Type}");
         GameObject go = _resourceManager.Instantiate(resourcePath);
@@ -225,15 +230,32 @@ public class ObjectManager : MonoBehaviour
         }
     }
 
-    public void Despawn(int objectId)
+    public void Despawn(int objectId, int pickerId = 0)
     {
         if (_objects.TryGetValue(objectId, out GameObject go))
         {
-            // [Fix] DeadReckoning 버퍼 정리 (늦은 패킷으로 인한 유령 이동 방지)
-            var dr = go.GetComponent<DeadReckoning>();
-            if (dr != null)
+            // [New] Picker 정보가 있으면 소유권을 연출 컴포넌트로 넘기고 관리 리스트에서 먼저 제거
+            if (pickerId != 0 && _objects.TryGetValue(pickerId, out GameObject pickerGo))
             {
-                dr.ClearSnapshots();
+                var gemCtrl = go.GetComponent<ExpGemController>();
+                if (gemCtrl != null)
+                {
+                    // DeadReckoning 비활성화 (서버 위치 동기화 중단하고 연출 시작)
+                    var dr = go.GetComponent<DeadReckoning>();
+                    if (dr != null)
+                        dr.enabled = false;
+
+                    gemCtrl.InitAndFly(pickerGo.transform, 15.0f); // Speed from GameConfig
+                    _objects.Remove(objectId);
+                    return;
+                }
+            }
+
+            // [Fix] DeadReckoning 버퍼 정리 (늦은 패킷으로 인한 유령 이동 방지)
+            var dr2 = go.GetComponent<DeadReckoning>();
+            if (dr2 != null)
+            {
+                dr2.ClearSnapshots();
             }
 
             Destroy(go);

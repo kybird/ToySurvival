@@ -227,10 +227,13 @@ public class PacketHandler
         if (ObjectManager.Instance == null)
             return;
 
-        foreach (int id in res.ObjectIds)
+        for (int i = 0; i < res.ObjectIds.Count; i++)
         {
-            Debug.Log($"[PacketHandler] Despawning Object ID: {id}");
-            ObjectManager.Instance.Despawn(id);
+            int id = res.ObjectIds[i];
+            int pickerId = (i < res.PickerIds.Count) ? res.PickerIds[i] : 0;
+
+            Debug.Log($"[PacketHandler] Despawning Object ID: {id}, PickerId: {pickerId}");
+            ObjectManager.Instance.Despawn(id, pickerId);
         }
     }
 
