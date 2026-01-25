@@ -82,6 +82,10 @@ public class GameManager : MonoBehaviour
                 (GameState.Login, StateEvent.LoginFail),
                 new Transition { NextState = GameState.Login }
             }, // Stay
+            {
+                (GameState.Login, StateEvent.Disconnect),
+                new Transition { NextState = GameState.Login }
+            }, // Stay on disconnect at Login
             // Lobby -> Loading -> InGame
             {
                 (GameState.Lobby, StateEvent.JoinRoomSuccess),

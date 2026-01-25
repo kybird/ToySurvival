@@ -1,13 +1,13 @@
-using UnityEngine;
-using UnityEngine.UI;
 using Protocol;
 using TMPro; // TMP 사용 권장 (없을 경우 일반 Text로 대체 가능)
+using UnityEngine;
+using UnityEngine.UI;
 
 public class LoginUI : MonoBehaviour
 {
     [Header("Network Settings")]
     public string ip = "127.0.0.1";
-    public int port = 9000;
+    public int port = 9001;
 
     [Header("UI References")]
     public InputField usernameInput;
@@ -24,7 +24,7 @@ public class LoginUI : MonoBehaviour
             loginButton.onClick.AddListener(OnClickLogin);
             loginButton.interactable = false; // 시작 시 비활성화
         }
-            
+
         // 연출: 페이드 인
         if (mainCanvasGroup != null)
         {
@@ -35,7 +35,7 @@ public class LoginUI : MonoBehaviour
         // 네트워크 상태 변화 리스너 등록
         NetworkManager.Instance.OnConnected = HandleOnConnected;
         NetworkManager.Instance.OnDisconnected = HandleOnDisconnected;
-        
+
         UpdateStatusText();
 
         // 씬 시작 시 자동 연결 시도
@@ -107,7 +107,10 @@ public class LoginUI : MonoBehaviour
     {
         if (NetworkManager.Instance.IsConnected == false)
         {
-            Debug.LogWarning("Not connected to server. Login aborted.");
+            Debug.LogError(
+                "[LoginUI] Connection Check Failed! NetworkManager.IsConnected returned false."
+            );
+            // Poll check may have detected closed connection just now.
             UpdateStatusText();
             return;
         }
@@ -115,13 +118,11 @@ public class LoginUI : MonoBehaviour
         string user = usernameInput != null ? usernameInput.text : "TestUser";
         string pass = passwordInput != null ? passwordInput.text : "Password123";
 
-        Debug.Log($"Sending C_Login for User: {user}, Password: {pass.Substring(0, Mathf.Min(pass.Length, 3))}...");
-        
-        C_Login req = new C_Login()
-        {
-            Username = user,
-            Password = pass
-        };
+        Debug.Log(
+            $"Sending C_Login for User: {user}, Password: {pass.Substring(0, Mathf.Min(pass.Length, 3))}..."
+        );
+
+        C_Login req = new C_Login() { Username = user, Password = pass };
         NetworkManager.Instance.Send(req);
     }
 }

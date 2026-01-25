@@ -3,25 +3,34 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using Network;
-using UnityEngine;
 using Core;
+using Network;
 using Protocol;
+using UnityEngine;
 
 public class NetworkManager : MonoBehaviour
 {
     static NetworkManager _instance;
-    public static NetworkManager Instance { get { return _instance; } }
+    public static NetworkManager Instance
+    {
+        get { return _instance; }
+    }
 
     ServerSession _session = new ServerSession();
-    public ServerSession Session { get { return _session; } }
+    public ServerSession Session
+    {
+        get { return _session; }
+    }
 
-    public bool IsConnected { get; private set; } = false;
+    public bool IsConnected
+    {
+        get { return _session != null && _session.IsConnected(); }
+    }
     public int MyPlayerId { get; set; }
     public float MapWidth { get; set; }
 
     public float MapHeight { get; set; }
-    
+
     // 서버에서 S_Login으로 받아올 Tick 설정 (기본값은 GameConstants 사용)
     public int ServerTickRate { get; set; } = GameConstants.DEFAULT_TICK_RATE;
     public float ServerTickInterval { get; set; } = GameConstants.DEFAULT_SERVER_DT;
@@ -40,20 +49,24 @@ public class NetworkManager : MonoBehaviour
     void Awake()
     {
         Time.timeScale = 1f;
-        Debug.Log($"[NetworkManager] Awake called. Current instance: {(_instance != null ? "EXISTS" : "NULL")}");
-        
+        Debug.Log(
+            $"[NetworkManager] Awake called. Current instance: {(_instance != null ? "EXISTS" : "NULL")}"
+        );
+
         if (_instance == null)
         {
             _instance = this;
             DontDestroyOnLoad(gameObject);
             Debug.Log("[NetworkManager] Instance created and set to DontDestroyOnLoad");
-            
+
             // 핵심 매니저들 생성
             EnsureCoreManagers();
         }
         else
         {
-            Debug.LogWarning("[NetworkManager] Duplicate instance detected - Destroying this GameObject");
+            Debug.LogWarning(
+                "[NetworkManager] Duplicate instance detected - Destroying this GameObject"
+            );
             Destroy(gameObject);
         }
     }
@@ -76,7 +89,9 @@ public class NetworkManager : MonoBehaviour
         {
             GameObject go = new GameObject("TickManager");
             go.AddComponent<TickManager>();
-            Debug.Log($"[NetworkManager] TickManager created. Instance is now: {(TickManager.Instance != null ? "VALID" : "NULL")}");
+            Debug.Log(
+                $"[NetworkManager] TickManager created. Instance is now: {(TickManager.Instance != null ? "VALID" : "NULL")}"
+            );
         }
 
         // ObjectManager
@@ -142,38 +157,41 @@ public class NetworkManager : MonoBehaviour
         IPEndPoint endPoint = new IPEndPoint(ipAddr, port);
 
         Connector connector = new Connector();
-        connector.OnFailed = () => 
+        connector.OnFailed = () =>
         {
-            PushJob(() => 
+            PushJob(() =>
             {
                 _isConnecting = false;
                 if (!_isRetrying && !IsConnected)
                     StartCoroutine(CoRetryConnect());
             });
         };
-        connector.Connect(endPoint, () => 
-        {
-            _session.OnConnectedCallback = () => PushJob(HandleConnected);
-            _session.OnDisconnectedCallback = () => PushJob(HandleDisconnected);
-            return _session;
-        });
+        connector.Connect(
+            endPoint,
+            () =>
+            {
+                _session.OnConnectedCallback = () => PushJob(HandleConnected);
+                _session.OnDisconnectedCallback = () => PushJob(HandleDisconnected);
+                return _session;
+            }
+        );
     }
 
     void HandleConnected()
     {
         Debug.Log("Connected to Server");
-        IsConnected = true;
+        // IsConnected is now dynamic property
         _isConnecting = false;
         _isRetrying = false;
         OnConnected?.Invoke();
-        
+
         StartCoroutine(CoSendPing());
     }
 
     void HandleDisconnected()
     {
         Debug.Log("Disconnected from Server");
-        IsConnected = false;
+        // IsConnected is now dynamic property
         _isConnecting = false;
         OnDisconnected?.Invoke();
 
@@ -184,7 +202,7 @@ public class NetworkManager : MonoBehaviour
         {
             GameManager.Instance.TriggerEvent(StateEvent.Disconnect);
         }
-        
+
         // Auto-Reconnect
         if (!_isRetrying)
         {
@@ -257,12 +275,13 @@ public class NetworkManager : MonoBehaviour
 
     public void SendPing()
     {
-        if (!IsConnected) return;
+        if (!IsConnected)
+            return;
 
         C_Ping pingPacket = new C_Ping();
         pingPacket.Timestamp = (long)(Time.realtimeSinceStartupAsDouble * 1000);
         Send(pingPacket);
-        
+
         _lastPingTime = pingPacket.Timestamp;
     }
 
@@ -270,7 +289,7 @@ public class NetworkManager : MonoBehaviour
     {
         long current = (long)(Time.realtimeSinceStartupAsDouble * 1000);
         long rtt = current - serverTimestamp;
-        
+
         if (RTT == 0)
             RTT = rtt;
         else

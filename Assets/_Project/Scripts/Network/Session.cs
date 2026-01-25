@@ -60,14 +60,35 @@ namespace Network
             }
         }
 
+        public bool IsConnected()
+        {
+            if (_disconnected == 1 || _socket == null)
+                return false;
+
+            try
+            {
+                // Poll check: if SelectRead returns true and Available is 0, connection is closed.
+                return !(_socket.Poll(1000, SelectMode.SelectRead) && _socket.Available == 0);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
         public void Disconnect()
         {
             if (Interlocked.Exchange(ref _disconnected, 1) == 1)
                 return;
 
             OnDisconnected();
-            _socket.Shutdown(SocketShutdown.Both);
-            _socket.Close();
+            try
+            {
+                _socket.Shutdown(SocketShutdown.Both);
+                _socket.Close();
+            }
+            catch { }
+
             Clear();
         }
 
@@ -154,6 +175,9 @@ namespace Network
             {
                 if (_recvBuffer.OnWrite(args.BytesTransferred) == false)
                 {
+                    UnityEngine.Debug.LogError(
+                        $"[Session] Disconnected: RecvBuffer OnWrite failed (Size: {args.BytesTransferred})"
+                    );
                     Disconnect();
                     return;
                 }
@@ -161,12 +185,16 @@ namespace Network
                 int processLen = OnRecv(_recvBuffer.ReadSegment);
                 if (processLen < 0 || _recvBuffer.DataSize < processLen)
                 {
+                    UnityEngine.Debug.LogError(
+                        $"[Session] Disconnected: OnRecv ProcessLen error ({processLen})"
+                    );
                     Disconnect();
                     return;
                 }
 
                 if (_recvBuffer.OnRead(processLen) == false)
                 {
+                    UnityEngine.Debug.LogError($"[Session] Disconnected: RecvBuffer OnRead failed");
                     Disconnect();
                     return;
                 }
@@ -175,6 +203,9 @@ namespace Network
             }
             else
             {
+                UnityEngine.Debug.LogError(
+                    $"[Session] Disconnected: Recv Failed (Bytes: {args.BytesTransferred}, Error: {args.SocketError})"
+                );
                 Disconnect();
             }
         }
@@ -203,7 +234,11 @@ namespace Network
                 OnRecvPacket(new ArraySegment<byte>(buffer.Array, buffer.Offset, dataSize));
 
                 processLen += dataSize;
-                buffer = new ArraySegment<byte>(buffer.Array, buffer.Offset + dataSize, buffer.Count - dataSize);
+                buffer = new ArraySegment<byte>(
+                    buffer.Array,
+                    buffer.Offset + dataSize,
+                    buffer.Count - dataSize
+                );
             }
 
             return processLen;
