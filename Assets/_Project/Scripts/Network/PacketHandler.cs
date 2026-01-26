@@ -46,6 +46,9 @@ public class PacketHandler
 
             // GameManager를 통한 상태 전이
             GameManager.Instance.TriggerEvent(StateEvent.LoginSuccess);
+
+            // [Fix] Start Pinging ONLY after Login Success
+            NetworkManager.Instance.StartPingCoroutine();
         }
         else
         {

@@ -45,6 +45,7 @@ public class NetworkManager : MonoBehaviour
     private float _retryInterval = 2.0f;
     private Queue<Action> _jobQueue = new Queue<Action>();
     private object _lock = new object();
+    private Coroutine _pingCoroutine;
 
     void Awake()
     {
@@ -185,7 +186,9 @@ public class NetworkManager : MonoBehaviour
         _isRetrying = false;
         OnConnected?.Invoke();
 
-        StartCoroutine(CoSendPing());
+        // [Fix] Do NOT start pinging immediately.
+        // Wait for S_Login success to ensure we are authenticated.
+        // StartCoroutine(CoSendPing());
     }
 
     void HandleDisconnected()
@@ -195,7 +198,11 @@ public class NetworkManager : MonoBehaviour
         _isConnecting = false;
         OnDisconnected?.Invoke();
 
-        StopCoroutine(CoSendPing());
+        if (_pingCoroutine != null)
+        {
+            StopCoroutine(_pingCoroutine);
+            _pingCoroutine = null;
+        }
 
         // GameManager에 Disconnect 이벤트 전달
         if (GameManager.Instance != null)
@@ -210,13 +217,29 @@ public class NetworkManager : MonoBehaviour
         }
     }
 
+    public void StartPingCoroutine()
+    {
+        // Prevent duplicate coroutines if called multiple times
+        if (_pingCoroutine != null)
+        {
+            StopCoroutine(_pingCoroutine);
+            _pingCoroutine = null;
+        }
+        _pingCoroutine = StartCoroutine(CoSendPing());
+    }
+
     IEnumerator CoSendPing()
     {
         while (IsConnected)
         {
-            SendPing();
+            // Do NOT send ping if we are in Login state (unauthenticated)
+            if (GameManager.Instance != null && GameManager.Instance.CurrentState != GameState.Login)
+            {
+                SendPing();
+            }
             yield return new WaitForSeconds(1.0f);
         }
+        _pingCoroutine = null;
     }
 
     IEnumerator CoRetryConnect()
