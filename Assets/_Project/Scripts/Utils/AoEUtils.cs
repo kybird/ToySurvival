@@ -105,11 +105,12 @@ namespace Utils
             sr.sortingLayerName = "GroundEffect";
             sr.sortingOrder = 0; // 바닥에 깔리도록
 
+            var tex = AoETexCache.GetCircleTexture();
             sr.sprite = Sprite.Create(
-                AoETexCache.GetCircleTexture(),
-                new Rect(0, 0, 256, 256),
+                tex,
+                new Rect(0, 0, tex.width, tex.height),
                 new Vector2(0.5f, 0.5f),
-                pixelsPerUnit: 100
+                pixelsPerUnit: tex.width // 텍스처 크기와 동일하게 설정하여 기본 크기를 1x1로 맞춤
             );
             sr.color = color;
 
