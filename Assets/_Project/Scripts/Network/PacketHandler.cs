@@ -300,6 +300,25 @@ public class PacketHandler
         }
     }
 
+    public static void Handle_S_SkillEffect(IMessage packet)
+    {
+        S_SkillEffect res = (S_SkillEffect)packet;
+        Debug.Log(
+            $"[PacketHandler] Skill Effect: Caster={res.CasterId}, Skill={res.SkillId}, Pos=({res.X},{res.Y})"
+        );
+
+        if (ObjectManager.Instance != null)
+        {
+            ObjectManager.Instance.PlaySkillEffect(
+                res.SkillId,
+                res.X,
+                res.Y,
+                res.Radius,
+                res.DurationSeconds
+            );
+        }
+    }
+
     public static void Handle_S_Knockback(IMessage packet)
     {
         S_Knockback res = (S_Knockback)packet;

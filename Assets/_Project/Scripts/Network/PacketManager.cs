@@ -80,6 +80,9 @@ namespace Network
             _onRecv.Add((ushort)Protocol.MsgId.SDamageEffect, MakePacket<S_DamageEffect>);
             _handler.Add((ushort)Protocol.MsgId.SDamageEffect, PacketHandler.Handle_S_DamageEffect);
 
+            _onRecv.Add((ushort)Protocol.MsgId.SSkillEffect, MakePacket<S_SkillEffect>);
+            _handler.Add((ushort)Protocol.MsgId.SSkillEffect, PacketHandler.Handle_S_SkillEffect);
+
             _onRecv.Add((ushort)Protocol.MsgId.SPlayerDowned, MakePacket<S_PlayerDowned>);
             _handler.Add((ushort)Protocol.MsgId.SPlayerDowned, PacketHandler.Handle_S_PlayerDowned);
 
@@ -105,10 +108,7 @@ namespace Network
             );
 
             _onRecv.Add((ushort)Protocol.MsgId.SWaveNotify, MakePacket<S_WaveNotify>);
-            _handler.Add(
-                (ushort)Protocol.MsgId.SWaveNotify,
-                PacketHandler.Handle_S_WaveNotify
-            );
+            _handler.Add((ushort)Protocol.MsgId.SWaveNotify, PacketHandler.Handle_S_WaveNotify);
         }
 
         public void OnRecvPacket(ArraySegment<byte> buffer, Action<IMessage> onRecvCallback = null)

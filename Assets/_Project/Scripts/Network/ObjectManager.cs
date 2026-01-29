@@ -309,6 +309,40 @@ public class ObjectManager : MonoBehaviour
         }
     }
 
+    public void PlaySkillEffect(int skillId, float x, float y, float radius, float duration)
+    {
+        // [New] Frost Nova (ID 3) 같이 코드 기반 장판만 필요한 경우 처리
+        if (skillId == 3) // Frost Nova
+        {
+            Utils.AoEUtils.DrawAoE(
+                worldPos: new Vector2(x, y),
+                radius: radius,
+                color: new Color(0.4f, 0.7f, 1.0f, 0.5f), // 시원한 하늘색 반투명
+                duration: duration
+            );
+
+            Debug.Log(
+                $"[ObjectManager] Played circular AoE effect for skill {skillId} at ({x}, {y})"
+            );
+            return; // 프리팹 로드 하지 않음
+        }
+
+        // 그 외 프리팹이 필요한 스킬들 처리
+        string resourcePath = $"Prefabs/SkillEffect_{skillId}";
+        GameObject effectObj = _resourceManager.Instantiate(resourcePath);
+        if (effectObj != null)
+        {
+            effectObj.transform.position = new Vector3(x, y, 0);
+            Debug.Log(
+                $"[ObjectManager] Played skill effect {skillId} at ({x}, {y}) (R:{radius}, D:{duration})"
+            );
+        }
+        else
+        {
+            Debug.LogWarning($"[ObjectManager] Failed to load skill effect prefab: {resourcePath}");
+        }
+    }
+
     public void OnPlayerDead(int playerId)
     {
         if (_objects.TryGetValue(playerId, out GameObject go))
