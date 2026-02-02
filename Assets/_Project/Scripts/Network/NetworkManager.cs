@@ -3,10 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Linq;
 using Core;
 using Network;
 using Protocol;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class NetworkManager : MonoBehaviour
 {
@@ -35,8 +37,10 @@ public class NetworkManager : MonoBehaviour
     public int ServerTickRate { get; set; } = GameConstants.DEFAULT_TICK_RATE;
     public float ServerTickInterval { get; set; } = GameConstants.DEFAULT_SERVER_DT;
 
-    public Action OnConnected { get; set; }
-    public Action OnDisconnected { get; set; }
+    // [Fix] Use events instead of Action properties to allow += and -=
+    // This prevents MissingReferenceException when LoginUI is destroyed
+    public event Action OnConnected;
+    public event Action OnDisconnected;
 
     private string _lastHost;
     private int _lastPort;
@@ -194,12 +198,42 @@ public class NetworkManager : MonoBehaviour
         Debug.Log($"[NetworkManager] OnConnected has {(OnConnected != null ? "subscribers" : "NO subscribers")}");
         OnConnected?.Invoke();
 
-        // [Fix] 직접 LoginUI를 찾아서 갱신 (타이밍 문제 해결)
-        var loginUI = GameObject.FindObjectOfType<LoginUI>();
+        // [Fix] 직접 LoginUI를 찾아서 갱신 (현재 활성 씬만 검색)
+        // FindObjectsOfType은 모든 씬에서 찾으므로, 활성 씬의 GameObject만 필터링
+        Scene activeScene = SceneManager.GetActiveScene();
+        LoginUI[] loginUIs = GameObject.FindObjectsOfType<LoginUI>(true);
+
+        // [Debug] 모든 로드된 씬과 찾은 LoginUI 로깅
+        Debug.Log($"[NetworkManager] ActiveScene: '{activeScene.name}' (loaded={activeScene.isLoaded})");
+        for (int i = 0; i < SceneManager.sceneCount; i++)
+        {
+            Scene s = SceneManager.GetSceneAt(i);
+            Debug.Log($"[NetworkManager] Loaded Scene[{i}]: '{s.name}' (loaded={s.isLoaded})");
+        }
+        Debug.Log($"[NetworkManager] Found {loginUIs.Length} LoginUI(s)");
+        foreach (var ui in loginUIs)
+        {
+            Debug.Log($"[NetworkManager]   - LoginUI on GameObject '{ui.gameObject.name}', scene='{ui.gameObject.scene.name}', activeInHierarchy={ui.gameObject.activeInHierarchy}");
+        }
+
+        LoginUI loginUI = null;
+        foreach (var ui in loginUIs)
+        {
+            if (ui.gameObject.activeInHierarchy && ui.gameObject.scene == activeScene)
+            {
+                loginUI = ui;
+                break;
+            }
+        }
+
         if (loginUI != null)
         {
-            loginUI.SendMessage("UpdateStatusText", SendMessageOptions.DontRequireReceiver);
-            Debug.Log("[NetworkManager] Directly updated LoginUI status");
+            loginUI.UpdateStatusText();
+            Debug.Log($"[NetworkManager] Directly updated LoginUI status. IsConnected={IsConnected}, UI on '{loginUI.gameObject.name}'");
+        }
+        else
+        {
+            Debug.LogWarning($"[NetworkManager] LoginUI not found in any scene!");
         }
 
         // [Fix] Do NOT start pinging immediately.
@@ -216,12 +250,42 @@ public class NetworkManager : MonoBehaviour
         Debug.Log($"[NetworkManager] OnDisconnected has {(OnDisconnected != null ? "subscribers" : "NO subscribers")}");
         OnDisconnected?.Invoke();
 
-        // [Fix] 직접 LoginUI를 찾아서 갱신 (타이밍 문제 해결)
-        var loginUI = GameObject.FindObjectOfType<LoginUI>();
+        // [Fix] 직접 LoginUI를 찾아서 갱신 (현재 활성 씬만 검색)
+        // FindObjectsOfType은 모든 씬에서 찾으므로, 활성 씬의 GameObject만 필터링
+        Scene activeScene = SceneManager.GetActiveScene();
+        LoginUI[] loginUIs = GameObject.FindObjectsOfType<LoginUI>(true);
+
+        // [Debug] 모든 로드된 씬과 찾은 LoginUI 로깅
+        Debug.Log($"[NetworkManager] ActiveScene: '{activeScene.name}' (loaded={activeScene.isLoaded})");
+        for (int i = 0; i < SceneManager.sceneCount; i++)
+        {
+            Scene s = SceneManager.GetSceneAt(i);
+            Debug.Log($"[NetworkManager] Loaded Scene[{i}]: '{s.name}' (loaded={s.isLoaded})");
+        }
+        Debug.Log($"[NetworkManager] Found {loginUIs.Length} LoginUI(s)");
+        foreach (var ui in loginUIs)
+        {
+            Debug.Log($"[NetworkManager]   - LoginUI on GameObject '{ui.gameObject.name}', scene='{ui.gameObject.scene.name}', activeInHierarchy={ui.gameObject.activeInHierarchy}");
+        }
+
+        LoginUI loginUI = null;
+        foreach (var ui in loginUIs)
+        {
+            if (ui.gameObject.activeInHierarchy && ui.gameObject.scene == activeScene)
+            {
+                loginUI = ui;
+                break;
+            }
+        }
+
         if (loginUI != null)
         {
-            loginUI.SendMessage("UpdateStatusText", SendMessageOptions.DontRequireReceiver);
-            Debug.Log("[NetworkManager] Directly updated LoginUI status");
+            loginUI.UpdateStatusText();
+            Debug.Log($"[NetworkManager] Directly updated LoginUI status. IsConnected={IsConnected}, UI on '{loginUI.gameObject.name}'");
+        }
+        else
+        {
+            Debug.LogWarning($"[NetworkManager] LoginUI not found in any scene!");
         }
 
         if (_pingCoroutine != null)

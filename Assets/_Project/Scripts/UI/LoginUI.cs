@@ -19,10 +19,49 @@ public class LoginUI : MonoBehaviour
 
     void Start()
     {
+        // Fallback: loginButton이 Inspector에 연결되지 않았으면 동적으로 찾기
+        if (loginButton == null)
+        {
+            loginButton = GetComponentInChildren<Button>();
+            Debug.Log($"[LoginUI] loginButton was NULL, dynamically found: {(loginButton != null ? "SUCCESS" : "FAILED")}");
+        }
+
+        // Fallback: statusText가 Inspector에 연결되지 않았으면 동적으로 찾기
+        if (statusText == null)
+        {
+            statusText = GetComponentInChildren<Text>();
+            if (statusText == null)
+            {
+                // "Status"나 "Server"가 포함된 이름의 Text 찾기
+                Text[] allTexts = GetComponentsInChildren<Text>(true);
+                foreach (var txt in allTexts)
+                {
+                    if (txt.name.Contains("Status") || txt.name.Contains("Server") || txt.name.Contains("status"))
+                    {
+                        statusText = txt;
+                        Debug.Log($"[LoginUI] statusText was NULL, dynamically found by name: {txt.name}");
+                        break;
+                    }
+                }
+                if (statusText == null)
+                {
+                    Debug.LogWarning("[LoginUI] statusText not found! Status display will not work.");
+                }
+            }
+            else
+            {
+                Debug.Log("[LoginUI] statusText was NULL, dynamically found by GetComponentInChildren: SUCCESS");
+            }
+        }
+
         if (loginButton != null)
         {
             loginButton.onClick.AddListener(OnClickLogin);
             loginButton.interactable = false; // 시작 시 비활성화
+        }
+        else
+        {
+            Debug.LogError("[LoginUI] CRITICAL: loginButton not found in children!");
         }
 
         // 연출: 페이드 인
@@ -32,9 +71,9 @@ public class LoginUI : MonoBehaviour
             StartCoroutine(FadeInUI());
         }
 
-        // 네트워크 상태 변화 리스너 등록
-        NetworkManager.Instance.OnConnected = HandleOnConnected;
-        NetworkManager.Instance.OnDisconnected = HandleOnDisconnected;
+        // 네트워크 상태 변화 리스너 등록 (event subscription)
+        NetworkManager.Instance.OnConnected += HandleOnConnected;
+        NetworkManager.Instance.OnDisconnected += HandleOnDisconnected;
 
         UpdateStatusText();
 
@@ -44,6 +83,7 @@ public class LoginUI : MonoBehaviour
 
     void OnDestroy()
     {
+        // [Fix] Unsubscribe from events to prevent MissingReferenceException
         if (NetworkManager.Instance != null)
         {
             NetworkManager.Instance.OnConnected -= HandleOnConnected;
@@ -65,6 +105,49 @@ public class LoginUI : MonoBehaviour
     {
         bool connected = NetworkManager.Instance.IsConnected;
 
+        // Debug 로그 추가
+        Debug.Log($"[LoginUI] UpdateStatusText() called on '{gameObject.name}' in scene '{UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}'. IsConnected={connected}");
+
+        // Fallback: FindObjectOfType으로 찾은 LoginUI일 경우 loginButton이 null일 수 있음
+        // GetComponentInChildren도 실패하면 씬 전체에서 Button을 찾음
+        if (loginButton == null)
+        {
+            loginButton = GetComponentInChildren<Button>();
+            if (loginButton == null)
+            {
+                // 씬 전체에서 "LoginButton"이라는 이름의 Button을 찾음
+                GameObject btnObj = GameObject.Find("LoginButton");
+                if (btnObj != null)
+                {
+                    loginButton = btnObj.GetComponent<Button>();
+                    Debug.Log($"[LoginUI] UpdateStatusText: Found button by name: {(loginButton != null ? "SUCCESS" : "FAILED")}, Button on '{btnObj.name}'");
+                }
+                else
+                {
+                    // 최후 수단: 모든 Button 컴포넌트 찾기 (비효율적이지만 확실함)
+                    Button[] allButtons = GameObject.FindObjectsOfType<Button>(true);
+                    if (allButtons != null && allButtons.Length > 0)
+                    {
+                        foreach (var btn in allButtons)
+                        {
+                            if (btn.name.Contains("Login") || btn.name.Contains("login"))
+                            {
+                                loginButton = btn;
+                                Debug.Log($"[LoginUI] UpdateStatusText: Found button by search: {btn.name}");
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                Debug.Log($"[LoginUI] UpdateStatusText: loginButton was NULL, dynamically found by GetComponentInChildren: SUCCESS");
+            }
+        }
+
+        Debug.Log($"[LoginUI] UpdateStatusText called. IsConnected={connected}, loginButton={(loginButton != null ? "exists" : "NULL")}");
+
         if (statusText != null)
         {
             if (connected)
@@ -82,6 +165,7 @@ public class LoginUI : MonoBehaviour
         if (loginButton != null)
         {
             loginButton.interactable = connected; // 연결 상태에 따라 버튼 활성화 제어
+            Debug.Log($"[LoginUI] loginButton.interactable set to {connected}");
         }
     }
 

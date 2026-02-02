@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading;
 using Google.Protobuf;
+using UnityEngine;
 
 namespace Network
 {
@@ -63,16 +64,30 @@ namespace Network
 
         public bool IsConnected()
         {
-            if (_disconnected == 1 || _socket == null)
+            if (_disconnected == 1)
+            {
+                // Debug.Log("[Session] IsConnected=false (_disconnected=1)");
                 return false;
+            }
+
+            if (_socket == null)
+            {
+                // Debug.Log("[Session] IsConnected=false (_socket=null)");
+                return false;
+            }
 
             try
             {
                 // Poll check: if SelectRead returns true and Available is 0, connection is closed.
-                return !(_socket.Poll(1000, SelectMode.SelectRead) && _socket.Available == 0);
+                bool pollResult = _socket.Poll(1000, SelectMode.SelectRead);
+                bool availableZero = _socket.Available == 0;
+                bool connected = !(pollResult && availableZero);
+                // Debug.Log($"[Session] IsConnected={connected} (Poll={pollResult}, AvailableZero={availableZero})");
+                return connected;
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Debug.Log($"[Session] IsConnected=false (Exception: {e.Message})");
                 return false;
             }
         }
