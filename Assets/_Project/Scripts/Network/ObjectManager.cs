@@ -50,7 +50,14 @@ public class ObjectManager : MonoBehaviour
 
     public void Clear()
     {
-        // 씬 전환 시 호출하여 관리 중인 오브젝트 리스트 초기화
+        // 씬 전환 시 호출하여 관리 중인 오브젝트 파괴 및 초기화
+        foreach (var kvp in _objects)
+        {
+            if (kvp.Value != null)
+            {
+                Destroy(kvp.Value);
+            }
+        }
         _objects.Clear();
     }
 

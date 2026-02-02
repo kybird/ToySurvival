@@ -6,11 +6,12 @@ using Google.Protobuf;
 
 namespace Network
 {
-    public abstract class Session
+    public abstract class Session : IDisposable
     {
         protected Socket _socket;
         int _disconnected = 0;
         bool _onCompletedRegistered = false;
+        private bool _disposed = false;
 
         object _lock = new object();
         Queue<ArraySegment<byte>> _sendQueue = new Queue<ArraySegment<byte>>();
@@ -84,8 +85,12 @@ namespace Network
             OnDisconnected();
             try
             {
-                _socket.Shutdown(SocketShutdown.Both);
-                _socket.Close();
+                if (_socket != null)
+                {
+                    _socket.Shutdown(SocketShutdown.Both);
+                    _socket.Close();
+                    _socket = null;
+                }
             }
             catch { }
 
@@ -208,6 +213,50 @@ namespace Network
                 );
                 Disconnect();
             }
+        }
+
+        #endregion
+
+        #region Dispose Pattern
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+                return;
+
+            if (disposing)
+            {
+                // Disconnect first
+                Disconnect();
+
+                // Dispose SocketAsyncEventArgs
+                if (_sendArgs != null)
+                {
+                    _sendArgs.Dispose();
+                    _sendArgs = null;
+                }
+
+                if (_recvArgs != null)
+                {
+                    _recvArgs.Dispose();
+                    _recvArgs = null;
+                }
+
+                // Clear collections
+                lock (_lock)
+                {
+                    _sendQueue?.Clear();
+                    _pendingList?.Clear();
+                }
+            }
+
+            _disposed = true;
         }
 
         #endregion

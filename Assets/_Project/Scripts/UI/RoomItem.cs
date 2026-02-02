@@ -39,7 +39,8 @@ public class RoomItem : MonoBehaviour
         if (_button.targetGraphic == null)
             _button.targetGraphic = bgImage;
 
-        _button.onClick.RemoveAllListeners();
+        // Remove listener first to prevent duplicates (consistent pattern with other UI)
+        _button.onClick.RemoveListener(OnClickItem);
         _button.onClick.AddListener(OnClickItem);
     }
 
@@ -49,6 +50,13 @@ public class RoomItem : MonoBehaviour
         {
             LobbyUI.Instance.SelectRoom(_roomId);
         }
+    }
+
+    private void OnDestroy()
+    {
+        // Clean up listener to prevent memory leaks
+        if (_button != null)
+            _button.onClick.RemoveListener(OnClickItem);
     }
 
     public void SetSelected(bool isSelected)

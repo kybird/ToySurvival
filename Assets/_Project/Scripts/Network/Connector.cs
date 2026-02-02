@@ -55,6 +55,9 @@ namespace Network
 
         void OnConnectCompleted(object sender, SocketAsyncEventArgs args)
         {
+            // Cleanup SocketAsyncEventArgs (prevent memory leak)
+            args.Completed -= OnConnectCompleted;
+
             if (args.SocketError == SocketError.Success)
             {
                 Session session = _sessionFactory.Invoke();
@@ -64,7 +67,7 @@ namespace Network
             else
             {
                 UnityEngine.Debug.LogError($"Connect Failed: {args.SocketError}");
-                
+
                 // Cleanup socket
                 Socket socket = args.UserToken as Socket;
                 try
@@ -76,6 +79,9 @@ namespace Network
 
                 OnFailed?.Invoke();
             }
+
+            // Dispose SocketAsyncEventArgs
+            args.Dispose();
         }
     }
 }

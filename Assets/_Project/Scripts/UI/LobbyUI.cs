@@ -32,32 +32,39 @@ public class LobbyUI : MonoBehaviour
     {
         Debug.Log("[LobbyUI] Start Initializing...");
 
+        // RemoveAllListeners to prevent duplicates when scene reloads
         if (enterRoomButton != null)
         {
-            enterRoomButton.onClick.RemoveAllListeners();
+            enterRoomButton.onClick.RemoveListener(OnClickEnterRoom);
             enterRoomButton.onClick.AddListener(OnClickEnterRoom);
         }
         else Debug.LogError("[LobbyUI] enterRoomButton is NULL");
 
         if (refreshButton != null)
+        {
+            refreshButton.onClick.RemoveListener(SendGetRoomList);
             refreshButton.onClick.AddListener(SendGetRoomList);
+        }
         else Debug.LogError("[LobbyUI] refreshButton is NULL");
 
         if (createRoomButton != null)
+        {
+            createRoomButton.onClick.RemoveListener(OpenCreateRoomPopup);
             createRoomButton.onClick.AddListener(OpenCreateRoomPopup);
+        }
         else Debug.LogError("[LobbyUI] createRoomButton is NULL");
 
         if (confirmCreateButton != null)
+        {
+            confirmCreateButton.onClick.RemoveListener(SendCreateRoom);
             confirmCreateButton.onClick.AddListener(SendCreateRoom);
-        
-        if (cancelCreateButton != null)
-            cancelCreateButton.onClick.AddListener(CloseCreateRoomPopup);
+        }
 
-        if (confirmCreateButton != null)
-            confirmCreateButton.onClick.AddListener(SendCreateRoom);
-        
         if (cancelCreateButton != null)
+        {
+            cancelCreateButton.onClick.RemoveListener(CloseCreateRoomPopup);
             cancelCreateButton.onClick.AddListener(CloseCreateRoomPopup);
+        }
 
         // Ensure popup is hidden initially
         if (createRoomPopup != null)
@@ -252,5 +259,27 @@ public class LobbyUI : MonoBehaviour
     {
         if (createRoomPopup != null)
             createRoomPopup.SetActive(false);
+    }
+
+    void OnDestroy()
+    {
+        // Clean up button listeners to prevent memory leaks
+        if (enterRoomButton != null)
+            enterRoomButton.onClick.RemoveListener(OnClickEnterRoom);
+
+        if (refreshButton != null)
+            refreshButton.onClick.RemoveListener(SendGetRoomList);
+
+        if (createRoomButton != null)
+            createRoomButton.onClick.RemoveListener(OpenCreateRoomPopup);
+
+        if (confirmCreateButton != null)
+            confirmCreateButton.onClick.RemoveListener(SendCreateRoom);
+
+        if (cancelCreateButton != null)
+            cancelCreateButton.onClick.RemoveListener(CloseCreateRoomPopup);
+
+        // Clear room items list
+        _roomItems.Clear();
     }
 }

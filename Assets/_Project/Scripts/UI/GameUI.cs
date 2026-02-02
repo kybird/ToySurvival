@@ -34,11 +34,19 @@ public class GameUI : MonoBehaviour
         if (notificationText != null)
             notificationText.text = "";
 
-        // Exit Button 이벤트 연결
+        // Exit Button 이벤트 연결 (remove first to prevent duplicates)
         if (exitButton != null)
         {
+            exitButton.onClick.RemoveListener(OnExitButtonClicked);
             exitButton.onClick.AddListener(OnExitButtonClicked);
         }
+    }
+
+    private void OnDestroy()
+    {
+        // Clean up button listeners to prevent memory leaks
+        if (exitButton != null)
+            exitButton.onClick.RemoveListener(OnExitButtonClicked);
     }
 
     /// <summary>

@@ -72,6 +72,12 @@ public class NetworkManager : MonoBehaviour
         }
     }
 
+    void OnDestroy()
+    {
+        Debug.Log("[NetworkManager] OnDestroy - Cleaning up session");
+        _session?.Dispose();
+    }
+
     /// <summary>
     /// 핵심 매니저들이 존재하는지 확인하고 없으면 생성합니다.
     /// </summary>
@@ -184,7 +190,17 @@ public class NetworkManager : MonoBehaviour
         // IsConnected is now dynamic property
         _isConnecting = false;
         _isRetrying = false;
+
+        Debug.Log($"[NetworkManager] OnConnected has {(OnConnected != null ? "subscribers" : "NO subscribers")}");
         OnConnected?.Invoke();
+
+        // [Fix] 직접 LoginUI를 찾아서 갱신 (타이밍 문제 해결)
+        var loginUI = GameObject.FindObjectOfType<LoginUI>();
+        if (loginUI != null)
+        {
+            loginUI.SendMessage("UpdateStatusText", SendMessageOptions.DontRequireReceiver);
+            Debug.Log("[NetworkManager] Directly updated LoginUI status");
+        }
 
         // [Fix] Do NOT start pinging immediately.
         // Wait for S_Login success to ensure we are authenticated.
@@ -196,7 +212,17 @@ public class NetworkManager : MonoBehaviour
         Debug.Log("Disconnected from Server");
         // IsConnected is now dynamic property
         _isConnecting = false;
+
+        Debug.Log($"[NetworkManager] OnDisconnected has {(OnDisconnected != null ? "subscribers" : "NO subscribers")}");
         OnDisconnected?.Invoke();
+
+        // [Fix] 직접 LoginUI를 찾아서 갱신 (타이밍 문제 해결)
+        var loginUI = GameObject.FindObjectOfType<LoginUI>();
+        if (loginUI != null)
+        {
+            loginUI.SendMessage("UpdateStatusText", SendMessageOptions.DontRequireReceiver);
+            Debug.Log("[NetworkManager] Directly updated LoginUI status");
+        }
 
         if (_pingCoroutine != null)
         {

@@ -104,7 +104,21 @@ public class LevelUpUI : MonoBehaviour
             _aoeIndicator = null;
         }
 
+        // Clean up spawned cards
+        foreach (var card in _spawnedCards)
+        {
+            if (card != null)
+                Destroy(card.gameObject);
+        }
+        _spawnedCards.Clear();
+
         _panelContainer.SetActive(false);
+    }
+
+    private void OnDestroy()
+    {
+        // Clean up to prevent memory leaks
+        Hide();
     }
 
     private void OnOptionSelected(int optionIndex)

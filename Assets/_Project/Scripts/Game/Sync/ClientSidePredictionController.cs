@@ -48,6 +48,12 @@ public class ClientSidePredictionController : MonoBehaviour
             _maxHistorySize = TickManager.Instance.TickRate * 2;
     }
 
+    // Check if input should be blocked (e.g., during level-up selection)
+    private bool IsInputBlocked()
+    {
+        return LevelUpUI.Instance != null && LevelUpUI.Instance.IsActive;
+    }
+
     public void OnMove(InputValue value)
     {
         _inputDir = value.Get<Vector2>();
@@ -63,7 +69,7 @@ public class ClientSidePredictionController : MonoBehaviour
         _localSimTick++;
 
         Vector2 effectiveDir = _inputDir;
-        if (LevelUpUI.Instance != null && LevelUpUI.Instance.IsActive)
+        if (IsInputBlocked())
             effectiveDir = Vector2.zero;
 
         _pendingInputs.Enqueue(new InputCmd { tick = _localSimTick, dir = effectiveDir });
@@ -118,7 +124,7 @@ public class ClientSidePredictionController : MonoBehaviour
             return;
 
         Vector2 sendDir = _inputDir;
-        if (LevelUpUI.Instance != null && LevelUpUI.Instance.IsActive)
+        if (IsInputBlocked())
             sendDir = Vector2.zero;
 
         // [Bug Fix] Round values before comparison to ignore micro float variations

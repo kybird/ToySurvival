@@ -61,7 +61,7 @@ public class LoginUI : MonoBehaviour
         UpdateStatusText();
     }
 
-    void UpdateStatusText()
+    public void UpdateStatusText()
     {
         bool connected = NetworkManager.Instance.IsConnected;
 
