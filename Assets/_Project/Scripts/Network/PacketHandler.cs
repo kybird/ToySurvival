@@ -511,4 +511,20 @@ public class PacketHandler
             GameUI.Instance.ShowNotification(res.Title, Color.cyan);
         }
     }
+
+    public static void Handle_S_DebugDrawBox(IMessage packet)
+    {
+        S_DebugDrawBox res = (S_DebugDrawBox)packet;
+        if (ObjectManager.Instance != null)
+        {
+            ObjectManager.Instance.DrawDebugBox(
+                res.X,
+                res.Y,
+                res.W,
+                res.H,
+                res.Duration,
+                res.ColorHex
+            );
+        }
+    }
 }

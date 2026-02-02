@@ -406,6 +406,49 @@ public class ObjectManager : MonoBehaviour
         }
     }
 
+    public void DrawDebugBox(float x, float y, float w, float h, float duration, uint colorHex)
+    {
+        // 간단한 사각형 그리기 (LineRenderer 이용)
+        GameObject boxObj = new GameObject("DebugBox");
+        boxObj.transform.position = new Vector3(x, y, 0);
+
+        LineRenderer lr = boxObj.AddComponent<LineRenderer>();
+        lr.positionCount = 5;
+        lr.loop = true;
+        lr.useWorldSpace = false;
+        lr.startWidth = 0.1f;
+        lr.endWidth = 0.1f;
+
+        // Material 설정 (Default-Line or Sprites-Default)
+        Shader shader = Shader.Find("Sprites/Default");
+        if (shader != null)
+            lr.material = new Material(shader);
+
+        // Color Parse
+        byte a = (byte)((colorHex >> 24) & 0xFF);
+        byte r = (byte)((colorHex >> 16) & 0xFF);
+        byte g = (byte)((colorHex >> 8) & 0xFF);
+        byte b = (byte)(colorHex & 0xFF);
+        Color c = new Color32(r, g, b, a);
+
+        lr.startColor = c;
+        lr.endColor = c;
+
+        float hw = w * 0.5f;
+        float hh = h * 0.5f;
+
+        lr.SetPosition(0, new Vector3(-hw, -hh, 0));
+        lr.SetPosition(1, new Vector3(-hw, hh, 0));
+        lr.SetPosition(2, new Vector3(hw, hh, 0));
+        lr.SetPosition(3, new Vector3(hw, -hh, 0));
+        lr.SetPosition(4, new Vector3(-hw, -hh, 0)); // Close loop
+
+        if (duration > 0)
+        {
+            Destroy(boxObj, duration);
+        }
+    }
+
     public GameObject GetMyPlayer()
     {
         if (NetworkManager.Instance == null)

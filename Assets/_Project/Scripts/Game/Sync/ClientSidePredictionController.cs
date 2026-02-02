@@ -121,19 +121,33 @@ public class ClientSidePredictionController : MonoBehaviour
         if (LevelUpUI.Instance != null && LevelUpUI.Instance.IsActive)
             sendDir = Vector2.zero;
 
+        // [Bug Fix] Round values before comparison to ignore micro float variations
+        Vector2Int roundedDir = new Vector2Int(
+            Mathf.RoundToInt(sendDir.x),
+            Mathf.RoundToInt(sendDir.y)
+        );
+        Vector2Int roundedLastDir = new Vector2Int(
+            Mathf.RoundToInt(_lastSentDir.x),
+            Mathf.RoundToInt(_lastSentDir.y)
+        );
+
         // [Sync Fix] Send ONLY if:
         // 1. Time overlapped (Heartbeat)
         // 2. OR Direction changed (Responsiveness)
         bool isTimeOver = (Time.unscaledTime - _lastSendTime >= sendInterval);
-        bool isDirChanged = (sendDir != _lastSentDir);
+        bool isDirChanged = (roundedDir != roundedLastDir);
+
+        // [Bug Fix] Don't send heartbeat when input is zero (prevents spam)
+        if (isTimeOver && !isDirChanged && roundedDir == Vector2Int.zero)
+            return;
 
         if (!isTimeOver && !isDirChanged)
             return;
 
         C_MoveInput pkt = new()
         {
-            DirX = Mathf.RoundToInt(sendDir.x),
-            DirY = Mathf.RoundToInt(sendDir.y),
+            DirX = roundedDir.x,
+            DirY = roundedDir.y,
             ClientTick = _localSimTick,
         };
 
