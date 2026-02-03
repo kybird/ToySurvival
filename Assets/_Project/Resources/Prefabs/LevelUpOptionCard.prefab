@@ -547,8 +547,8 @@ MonoBehaviour:
   _iconImage: {fileID: 2167178424977272119}
   _newBadge: {fileID: 6365436537988874727}
   _backgroundImage: {fileID: 7133056646069796813}
-  _upgradeColor: {r: 0.15, g: 0.15, b: 0.25, a: 0.95}
-  _newSkillColor: {r: 0.35, g: 0.25, b: 0.15, a: 0.95}
+  _upgradeColor: {r: 0.15, g: 0.15, b: 0.25, a: 0.39215687}
+  _newSkillColor: {r: 0.35, g: 0.25, b: 0.15, a: 0.39215687}
   _hoverScale: 1.05
   _animSpeed: 15
 --- !u!222 &3052197949322549788
