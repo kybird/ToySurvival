@@ -120,9 +120,7 @@ public class PacketHandler
 
         foreach (ObjectPos pos in res.Moves)
         {
-            if (pos.ObjectId == NetworkManager.Instance.MyPlayerId)
-                continue;
-
+            // [Sync Fix] 내 캐릭터의 경우에도 위치는 무시하더라도 속도(Speed) 동기화를 위해 ObjectManager에 전달합니다.
             ObjectManager.Instance.UpdatePos(pos, res.ServerTick);
         }
     }

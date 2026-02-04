@@ -272,9 +272,25 @@ public class ObjectManager : MonoBehaviour
 
     public void UpdatePos(ObjectPos pos, uint serverTick)
     {
-        // 내 캐릭터는 서버 위치 무시
+        // 내 캐릭터의 경우 위치 동기화(Snap)는 하지 않지만, 속도(Speed) 보너스는 상시 동기화합니다.
         if (pos.ObjectId == NetworkManager.Instance.MyPlayerId)
+        {
+            GameObject myPlayer = GetMyPlayer();
+            if (myPlayer != null)
+            {
+                var csp = myPlayer.GetComponent<ClientSidePredictionController>();
+                if (csp != null)
+                {
+                    // 서버에서 보낸 vx, vy의 크기(magnitude)를 현재 이동 속도로 취급합니다.
+                    float serverSpeed = new Vector2(pos.Vx, pos.Vy).magnitude;
+                    if (serverSpeed > 0.01f) // 0일 때는(정지 시) 마지막 속도를 유지합니다.
+                    {
+                        csp.moveSpeed = serverSpeed;
+                    }
+                }
+            }
             return;
+        }
 
         if (_objects.TryGetValue(pos.ObjectId, out GameObject go))
         {
