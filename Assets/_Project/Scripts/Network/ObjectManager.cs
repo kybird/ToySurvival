@@ -202,10 +202,9 @@ public class ObjectManager : MonoBehaviour
             };
 
             // [Important] Initialize immediately with Velocity and Delay Policy
-            if (serverTick > 0 && dr != null)
             {
                 dr.Initialize(delayMode);
-                dr.UpdateFromServer(info.X, info.Y, info.Vx, info.Vy, serverTick);
+                dr.UpdateFromServer(info.X, info.Y, info.Vx, info.Vy, info.LookLeft, serverTick);
             }
         }
 
@@ -298,7 +297,7 @@ public class ObjectManager : MonoBehaviour
             if (dr != null)
             {
                 // VX, VY 포함하여 전달 (Hermite Spline 지원)
-                dr.UpdateFromServer(pos.X, pos.Y, pos.Vx, pos.Vy, serverTick);
+                dr.UpdateFromServer(pos.X, pos.Y, pos.Vx, pos.Vy, pos.LookLeft, serverTick);
             }
         }
     }

@@ -17,6 +17,7 @@ public class DeadReckoning : MonoBehaviour
         public float time; // ★ server tick
         public Vector2 pos;
         public Vector2 vel; // ★ per-tick velocity
+        public bool lookLeft;
     }
 
     private List<Snapshot> _snapshots = new List<Snapshot>();
@@ -94,7 +95,14 @@ public class DeadReckoning : MonoBehaviour
         _hasReceivedUpdate = false;
     }
 
-    public void UpdateFromServer(float x, float y, float vx, float vy, uint serverTick)
+    public void UpdateFromServer(
+        float x,
+        float y,
+        float vx,
+        float vy,
+        bool lookLeft,
+        uint serverTick
+    )
     {
         // RTT 갱신 (NetworkManager 의존)
         if (NetworkManager.Instance != null)
@@ -114,6 +122,7 @@ public class DeadReckoning : MonoBehaviour
             // Server sends units/second (e.g. 2.0)
             // We use Ticks for time, so convert to units/tick
             vel = new Vector2(vx, vy) / TickManager.Instance.TickRate,
+            lookLeft = lookLeft,
         };
 
         LastReceivedTick = (int)serverTick;
@@ -209,6 +218,9 @@ public class DeadReckoning : MonoBehaviour
         // (InitGameAnchor에서 서버 틱 기준으로 초기화됨)
         float currentGameTick = TickManager.Instance.EstimateServerTickFloat();
 
+        // [New] Current Facing (Look direction from the most recent relevant snapshot)
+        bool currentLookLeft = false;
+
         // 보간 지연 적용 (Rendering Delay Policy)
         float delayTicks = _delayMode switch
         {
@@ -233,6 +245,7 @@ public class DeadReckoning : MonoBehaviour
 
         Snapshot first = _snapshots[0];
         Snapshot last = _snapshots[_snapshots.Count - 1];
+        currentLookLeft = last.lookLeft; // Default to latest
 
         // 아직 과거 데이터만 있음
         if (renderTick <= first.time)
@@ -271,6 +284,7 @@ public class DeadReckoning : MonoBehaviour
                 {
                     a = _snapshots[i];
                     b = _snapshots[i + 1];
+                    currentLookLeft = a.lookLeft; // Follow the earlier snapshot in the interval
                     break;
                 }
             }
@@ -295,7 +309,7 @@ public class DeadReckoning : MonoBehaviour
         }
 
         transform.position = new Vector3(nextPos.x, nextPos.y, 0);
-        UpdateVisuals(last.vel);
+        UpdateVisuals(last.vel, currentLookLeft);
     }
 
     private Vector2 Hermite(Vector2 p0, Vector2 p1, Vector2 m0, Vector2 m1, float t)
@@ -311,8 +325,14 @@ public class DeadReckoning : MonoBehaviour
         return h00 * p0 + h10 * m0 + h01 * p1 + h11 * m1;
     }
 
-    private void UpdateVisuals(Vector2 velocity)
+    private void UpdateVisuals(Vector2 velocity, bool lookLeft)
     {
+        // [New] 캐릭터는 서버에서 온 lookLeft 값을 최우선으로 사용
+        if (_spriteRenderer != null && !gameObject.name.Contains("Projectile"))
+        {
+            _spriteRenderer.flipX = lookLeft;
+        }
+
         if (velocity.sqrMagnitude < 0.01f)
             return;
 
@@ -331,10 +351,13 @@ public class DeadReckoning : MonoBehaviour
         else
         {
             // 캐릭터는 좌우 반전 (Flip)
+            // (서버 방향 값이 없을 때를 대비한 백업 로직이었으나, 이제 lookLeft를 위에서 처리함)
+            /*
             if (_spriteRenderer != null)
             {
                 _spriteRenderer.flipX = velocity.x < 0;
             }
+            */
 
             // 애니메이션
             if (_animator != null)
