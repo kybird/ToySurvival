@@ -12,6 +12,13 @@ public class GameSceneInitializer : MonoBehaviour
     {
         Debug.Log("[GameSceneInitializer] Initializing GameScene...");
 
+        // 배경 그리드 생성
+        if (FindObjectOfType<GridVisualizer>() == null)
+        {
+            GameObject gridObj = new GameObject("GridManager");
+            gridObj.AddComponent<GridVisualizer>();
+        }
+
         // 이전 게임 오브젝트 정리
         if (ObjectManager.Instance != null)
         {

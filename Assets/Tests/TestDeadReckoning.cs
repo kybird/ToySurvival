@@ -59,14 +59,14 @@ public class TestDeadReckoning
     public IEnumerator DeadReckoning_AdaptsToJitter()
     {
         // Arrange
-        _deadReckoning.UpdateFromServer(0, 0, 0, 0, 0);
+        _deadReckoning.UpdateFromServer(0, 0, 0, 0, false, 0);
         yield return null;
 
         // 1. Stable RTT (50ms) -> Jitter ~ 0
         for (int i = 0; i < 30; i++)
         {
             SetFakeRTT(50);
-            _deadReckoning.UpdateFromServer(0, 0, 0, 0, (uint)i);
+            _deadReckoning.UpdateFromServer(0, 0, 0, 0, false, (uint)i);
         }
 
         // Wait for lerp to settle
@@ -77,7 +77,7 @@ public class TestDeadReckoning
         {
             long noisyRTT = (i % 2 == 0) ? 50 : 150;
             SetFakeRTT(noisyRTT);
-            _deadReckoning.UpdateFromServer(0, 0, 0, 0, (uint)i);
+            _deadReckoning.UpdateFromServer(0, 0, 0, 0, false, (uint)i);
             yield return null;
         }
 
@@ -89,7 +89,7 @@ public class TestDeadReckoning
     {
         // Arrange
         SetFakeRTT(50);
-        _deadReckoning.UpdateFromServer(0, 0, 0, 0, 0);
+        _deadReckoning.UpdateFromServer(0, 0, 0, 0, false, 0);
 
         yield return null;
 
@@ -98,7 +98,7 @@ public class TestDeadReckoning
         float targetX = 10.0f;
         float velocityX = 10.0f;
 
-        _deadReckoning.UpdateFromServer(targetX, 0, velocityX, 0, futureTick);
+        _deadReckoning.UpdateFromServer(targetX, 0, velocityX, 0, false, futureTick);
 
         // Assert
         float simulationTime = 0.5f;

@@ -65,53 +65,53 @@ namespace Protocol {
             "eBgCIAEoAhIQCgh0YXJnZXRfeRgDIAEoAiKIAQoNU19Ta2lsbEVmZmVjdBIR",
             "CgljYXN0ZXJfaWQYASABKAUSEAoIc2tpbGxfaWQYAiABKAUSCQoBeBgDIAEo",
             "AhIJCgF5GAQgASgCEhIKCnRhcmdldF9pZHMYBSADKAUSDgoGcmFkaXVzGAYg",
-            "ASgCEhgKEGR1cmF0aW9uX3NlY29uZHMYByABKAIiTQoOU19EYW1hZ2VFZmZl",
+            "ASgCEhgKEGR1cmF0aW9uX3NlY29uZHMYByABKAIiYgoOU19EYW1hZ2VFZmZl",
             "Y3QSEAoIc2tpbGxfaWQYASABKAUSEgoKdGFyZ2V0X2lkcxgCIAMoBRIVCg1k",
-            "YW1hZ2VfdmFsdWVzGAMgAygFIl8KC1NfS25vY2tiYWNrEhEKCW9iamVjdF9p",
-            "ZBgBIAEoBRINCgVkaXJfeBgCIAEoAhINCgVkaXJfeRgDIAEoAhINCgVmb3Jj",
-            "ZRgEIAEoAhIQCghkdXJhdGlvbhgFIAEoAiIjCg5TX1BsYXllckRvd25lZBIR",
-            "CglwbGF5ZXJfaWQYASABKAUiIwoOU19QbGF5ZXJSZXZpdmUSEQoJcGxheWVy",
-            "X2lkGAEgASgFIkIKC1NfRXhwQ2hhbmdlEhMKC2N1cnJlbnRfZXhwGAEgASgF",
-            "Eg8KB21heF9leHAYAiABKAUSDQoFbGV2ZWwYAyABKAUiQwoKU19IcENoYW5n",
-            "ZRIRCglvYmplY3RfaWQYASABKAUSEgoKY3VycmVudF9ocBgCIAEoAhIOCgZt",
-            "YXhfaHAYAyABKAIiSwoMU19XYXZlTm90aWZ5EhIKCndhdmVfaW5kZXgYASAB",
-            "KAUSDQoFdGl0bGUYAiABKAkSGAoQZHVyYXRpb25fc2Vjb25kcxgDIAEoAiKH",
-            "AQoNTGV2ZWxVcE9wdGlvbhIRCglvcHRpb25faWQYASABKAUSEAoIc2tpbGxf",
-            "aWQYAiABKAUSDAoEbmFtZRgDIAEoCRIMCgRkZXNjGAQgASgJEg4KBmlzX25l",
-            "dxgFIAEoCBIlCglpdGVtX3R5cGUYBiABKA4yEi5Qcm90b2NvbC5JdGVtVHlw",
-            "ZSJpCg9TX0xldmVsVXBPcHRpb24SKAoHb3B0aW9ucxgBIAMoCzIXLlByb3Rv",
-            "Y29sLkxldmVsVXBPcHRpb24SFwoPdGltZW91dF9zZWNvbmRzGAIgASgCEhMK",
-            "C3Nsb3dfcmFkaXVzGAMgASgCIicKD0NfU2VsZWN0TGV2ZWxVcBIUCgxvcHRp",
-            "b25faW5kZXgYASABKAUiNgoJU19HYW1lV2luEhUKDXRvdGFsX3RpbWVfbXMY",
-            "ASABKAMSEgoKa2lsbF9jb3VudBgCIAEoBSI2CgpTX0dhbWVPdmVyEhgKEHN1",
-            "cnZpdmVkX3RpbWVfbXMYASABKAMSDgoGaXNfd2luGAIgASgIIiEKDFNfUGxh",
-            "eWVyRGVhZBIRCglwbGF5ZXJfaWQYASABKAUiGwoGU19QaW5nEhEKCXRpbWVz",
-            "dGFtcBgBIAEoAyIbCgZDX1BvbmcSEQoJdGltZXN0YW1wGAEgASgDIhsKBkNf",
-            "UGluZxIRCgl0aW1lc3RhbXAYASABKAMiGwoGU19Qb25nEhEKCXRpbWVzdGFt",
-            "cBgBIAEoAyIoChFTX0RlYnVnU2VydmVyVGljaxITCgtzZXJ2ZXJfdGljaxgB",
-            "IAEoDSr/BQoFTXNnSWQSCAoETk9ORRAAEgsKB0NfTE9HSU4QZBILCgdTX0xP",
-            "R0lOEGUSEQoNQ19DUkVBVEVfUk9PTRBmEhEKDVNfQ1JFQVRFX1JPT00QZxIP",
-            "CgtDX0pPSU5fUk9PTRBoEg8KC1NfSk9JTl9ST09NEGkSEwoPQ19HRVRfUk9P",
-            "TV9MSVNUEGoSDwoLU19ST09NX0xJU1QQaxIRCg1DX0VOVEVSX0xPQkJZEG4S",
-            "EQoNU19FTlRFUl9MT0JCWRBvEhAKDENfTEVBVkVfUk9PTRBwEhAKDFNfTEVB",
-            "VkVfUk9PTRBxEhAKDENfR0FNRV9SRUFEWRByEgoKBkNfQ0hBVBB4EgoKBlNf",
-            "Q0hBVBB5EhMKDlNfU1BBV05fT0JKRUNUEMgBEhUKEFNfREVTUEFXTl9PQkpF",
-            "Q1QQyQESGAoTU19NT1ZFX09CSkVDVF9CQVRDSBDKARIRCgxDX01PVkVfSU5Q",
-            "VVQQywESFwoSU19QTEFZRVJfU1RBVEVfQUNLEMwBEhAKC0NfVVNFX1NLSUxM",
-            "EKwCEhMKDlNfU0tJTExfRUZGRUNUEK0CEhQKD1NfREFNQUdFX0VGRkVDVBCu",
-            "AhIQCgtTX0tOT0NLQkFDSxCxAhIUCg9TX1BMQVlFUl9ET1dORUQQsgISFAoP",
-            "U19QTEFZRVJfUkVWSVZFELMCEhEKDFNfRVhQX0NIQU5HRRCQAxIWChFTX0xF",
-            "VkVMX1VQX09QVElPThCRAxIWChFDX1NFTEVDVF9MRVZFTF9VUBCSAxIQCgtT",
-            "X0hQX0NIQU5HRRCTAxISCg1TX1dBVkVfTk9USUZZEJQDEg8KClNfR0FNRV9X",
-            "SU4Q9AMSEAoLU19HQU1FX09WRVIQ9QMSEgoNU19QTEFZRVJfREVBRBD2AxIL",
-            "CgZTX1BJTkcQhAcSCwoGQ19QT05HEIUHEgsKBkNfUElORxCGBxILCgZTX1BP",
-            "TkcQhwcSGAoTU19ERUJVR19TRVJWRVJfVElDSxCIBxIVChBTX0RFQlVHX0RS",
-            "QVdfQk9YEIkHKkwKCk9iamVjdFR5cGUSCwoHVU5LTk9XThAAEgoKBlBMQVlF",
-            "UhABEgsKB01PTlNURVIQAhIOCgpQUk9KRUNUSUxFEAMSCAoESVRFTRAEKmQK",
-            "C09iamVjdFN0YXRlEggKBElETEUQABIKCgZNT1ZJTkcQARINCglBVFRBQ0tJ",
-            "TkcQAhIICgRERUFEEAMSCgoGRE9XTkVEEAQSDQoJS05PQ0tCQUNLEAUSCwoH",
-            "U1RVTk5FRBAGKi0KCEl0ZW1UeXBlEg8KC1dFQVBPTl9UWVBFEAASEAoMUEFT",
-            "U0lWRV9UWVBFEAFiBnByb3RvMw=="));
+            "YW1hZ2VfdmFsdWVzGAMgAygFEhMKC2lzX2NyaXRpY2FsGAQgAygIIl8KC1Nf",
+            "S25vY2tiYWNrEhEKCW9iamVjdF9pZBgBIAEoBRINCgVkaXJfeBgCIAEoAhIN",
+            "CgVkaXJfeRgDIAEoAhINCgVmb3JjZRgEIAEoAhIQCghkdXJhdGlvbhgFIAEo",
+            "AiIjCg5TX1BsYXllckRvd25lZBIRCglwbGF5ZXJfaWQYASABKAUiIwoOU19Q",
+            "bGF5ZXJSZXZpdmUSEQoJcGxheWVyX2lkGAEgASgFIkIKC1NfRXhwQ2hhbmdl",
+            "EhMKC2N1cnJlbnRfZXhwGAEgASgFEg8KB21heF9leHAYAiABKAUSDQoFbGV2",
+            "ZWwYAyABKAUiQwoKU19IcENoYW5nZRIRCglvYmplY3RfaWQYASABKAUSEgoK",
+            "Y3VycmVudF9ocBgCIAEoAhIOCgZtYXhfaHAYAyABKAIiSwoMU19XYXZlTm90",
+            "aWZ5EhIKCndhdmVfaW5kZXgYASABKAUSDQoFdGl0bGUYAiABKAkSGAoQZHVy",
+            "YXRpb25fc2Vjb25kcxgDIAEoAiKHAQoNTGV2ZWxVcE9wdGlvbhIRCglvcHRp",
+            "b25faWQYASABKAUSEAoIc2tpbGxfaWQYAiABKAUSDAoEbmFtZRgDIAEoCRIM",
+            "CgRkZXNjGAQgASgJEg4KBmlzX25ldxgFIAEoCBIlCglpdGVtX3R5cGUYBiAB",
+            "KA4yEi5Qcm90b2NvbC5JdGVtVHlwZSJpCg9TX0xldmVsVXBPcHRpb24SKAoH",
+            "b3B0aW9ucxgBIAMoCzIXLlByb3RvY29sLkxldmVsVXBPcHRpb24SFwoPdGlt",
+            "ZW91dF9zZWNvbmRzGAIgASgCEhMKC3Nsb3dfcmFkaXVzGAMgASgCIicKD0Nf",
+            "U2VsZWN0TGV2ZWxVcBIUCgxvcHRpb25faW5kZXgYASABKAUiNgoJU19HYW1l",
+            "V2luEhUKDXRvdGFsX3RpbWVfbXMYASABKAMSEgoKa2lsbF9jb3VudBgCIAEo",
+            "BSI2CgpTX0dhbWVPdmVyEhgKEHN1cnZpdmVkX3RpbWVfbXMYASABKAMSDgoG",
+            "aXNfd2luGAIgASgIIiEKDFNfUGxheWVyRGVhZBIRCglwbGF5ZXJfaWQYASAB",
+            "KAUiGwoGU19QaW5nEhEKCXRpbWVzdGFtcBgBIAEoAyIbCgZDX1BvbmcSEQoJ",
+            "dGltZXN0YW1wGAEgASgDIhsKBkNfUGluZxIRCgl0aW1lc3RhbXAYASABKAMi",
+            "GwoGU19Qb25nEhEKCXRpbWVzdGFtcBgBIAEoAyIoChFTX0RlYnVnU2VydmVy",
+            "VGljaxITCgtzZXJ2ZXJfdGljaxgBIAEoDSr/BQoFTXNnSWQSCAoETk9ORRAA",
+            "EgsKB0NfTE9HSU4QZBILCgdTX0xPR0lOEGUSEQoNQ19DUkVBVEVfUk9PTRBm",
+            "EhEKDVNfQ1JFQVRFX1JPT00QZxIPCgtDX0pPSU5fUk9PTRBoEg8KC1NfSk9J",
+            "Tl9ST09NEGkSEwoPQ19HRVRfUk9PTV9MSVNUEGoSDwoLU19ST09NX0xJU1QQ",
+            "axIRCg1DX0VOVEVSX0xPQkJZEG4SEQoNU19FTlRFUl9MT0JCWRBvEhAKDENf",
+            "TEVBVkVfUk9PTRBwEhAKDFNfTEVBVkVfUk9PTRBxEhAKDENfR0FNRV9SRUFE",
+            "WRByEgoKBkNfQ0hBVBB4EgoKBlNfQ0hBVBB5EhMKDlNfU1BBV05fT0JKRUNU",
+            "EMgBEhUKEFNfREVTUEFXTl9PQkpFQ1QQyQESGAoTU19NT1ZFX09CSkVDVF9C",
+            "QVRDSBDKARIRCgxDX01PVkVfSU5QVVQQywESFwoSU19QTEFZRVJfU1RBVEVf",
+            "QUNLEMwBEhAKC0NfVVNFX1NLSUxMEKwCEhMKDlNfU0tJTExfRUZGRUNUEK0C",
+            "EhQKD1NfREFNQUdFX0VGRkVDVBCuAhIQCgtTX0tOT0NLQkFDSxCxAhIUCg9T",
+            "X1BMQVlFUl9ET1dORUQQsgISFAoPU19QTEFZRVJfUkVWSVZFELMCEhEKDFNf",
+            "RVhQX0NIQU5HRRCQAxIWChFTX0xFVkVMX1VQX09QVElPThCRAxIWChFDX1NF",
+            "TEVDVF9MRVZFTF9VUBCSAxIQCgtTX0hQX0NIQU5HRRCTAxISCg1TX1dBVkVf",
+            "Tk9USUZZEJQDEg8KClNfR0FNRV9XSU4Q9AMSEAoLU19HQU1FX09WRVIQ9QMS",
+            "EgoNU19QTEFZRVJfREVBRBD2AxILCgZTX1BJTkcQhAcSCwoGQ19QT05HEIUH",
+            "EgsKBkNfUElORxCGBxILCgZTX1BPTkcQhwcSGAoTU19ERUJVR19TRVJWRVJf",
+            "VElDSxCIBxIVChBTX0RFQlVHX0RSQVdfQk9YEIkHKkwKCk9iamVjdFR5cGUS",
+            "CwoHVU5LTk9XThAAEgoKBlBMQVlFUhABEgsKB01PTlNURVIQAhIOCgpQUk9K",
+            "RUNUSUxFEAMSCAoESVRFTRAEKmQKC09iamVjdFN0YXRlEggKBElETEUQABIK",
+            "CgZNT1ZJTkcQARINCglBVFRBQ0tJTkcQAhIICgRERUFEEAMSCgoGRE9XTkVE",
+            "EAQSDQoJS05PQ0tCQUNLEAUSCwoHU1RVTk5FRBAGKi0KCEl0ZW1UeXBlEg8K",
+            "C1dFQVBPTl9UWVBFEAASEAoMUEFTU0lWRV9UWVBFEAFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Protocol.MsgId), typeof(global::Protocol.ObjectType), typeof(global::Protocol.ObjectState), typeof(global::Protocol.ItemType), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -141,7 +141,7 @@ namespace Protocol {
             new pbr::GeneratedClrTypeInfo(typeof(global::Protocol.S_PlayerStateAck), global::Protocol.S_PlayerStateAck.Parser, new[]{ "ServerTick", "ClientTick", "X", "Y" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Protocol.C_UseSkill), global::Protocol.C_UseSkill.Parser, new[]{ "SkillId", "TargetX", "TargetY" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Protocol.S_SkillEffect), global::Protocol.S_SkillEffect.Parser, new[]{ "CasterId", "SkillId", "X", "Y", "TargetIds", "Radius", "DurationSeconds" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Protocol.S_DamageEffect), global::Protocol.S_DamageEffect.Parser, new[]{ "SkillId", "TargetIds", "DamageValues" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Protocol.S_DamageEffect), global::Protocol.S_DamageEffect.Parser, new[]{ "SkillId", "TargetIds", "DamageValues", "IsCritical" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Protocol.S_Knockback), global::Protocol.S_Knockback.Parser, new[]{ "ObjectId", "DirX", "DirY", "Force", "Duration" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Protocol.S_PlayerDowned), global::Protocol.S_PlayerDowned.Parser, new[]{ "PlayerId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Protocol.S_PlayerRevive), global::Protocol.S_PlayerRevive.Parser, new[]{ "PlayerId" }, null, null, null, null),
@@ -7341,6 +7341,7 @@ namespace Protocol {
       skillId_ = other.skillId_;
       targetIds_ = other.targetIds_.Clone();
       damageValues_ = other.damageValues_.Clone();
+      isCritical_ = other.isCritical_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -7384,6 +7385,20 @@ namespace Protocol {
       get { return damageValues_; }
     }
 
+    /// <summary>Field number for the "is_critical" field.</summary>
+    public const int IsCriticalFieldNumber = 4;
+    private static readonly pb::FieldCodec<bool> _repeated_isCritical_codec
+        = pb::FieldCodec.ForBool(34);
+    private readonly pbc::RepeatedField<bool> isCritical_ = new pbc::RepeatedField<bool>();
+    /// <summary>
+    /// [New] Critical hit flags for each target
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<bool> IsCritical {
+      get { return isCritical_; }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -7402,6 +7417,7 @@ namespace Protocol {
       if (SkillId != other.SkillId) return false;
       if(!targetIds_.Equals(other.targetIds_)) return false;
       if(!damageValues_.Equals(other.damageValues_)) return false;
+      if(!isCritical_.Equals(other.isCritical_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -7412,6 +7428,7 @@ namespace Protocol {
       if (SkillId != 0) hash ^= SkillId.GetHashCode();
       hash ^= targetIds_.GetHashCode();
       hash ^= damageValues_.GetHashCode();
+      hash ^= isCritical_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -7436,6 +7453,7 @@ namespace Protocol {
       }
       targetIds_.WriteTo(output, _repeated_targetIds_codec);
       damageValues_.WriteTo(output, _repeated_damageValues_codec);
+      isCritical_.WriteTo(output, _repeated_isCritical_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -7452,6 +7470,7 @@ namespace Protocol {
       }
       targetIds_.WriteTo(ref output, _repeated_targetIds_codec);
       damageValues_.WriteTo(ref output, _repeated_damageValues_codec);
+      isCritical_.WriteTo(ref output, _repeated_isCritical_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -7467,6 +7486,7 @@ namespace Protocol {
       }
       size += targetIds_.CalculateSize(_repeated_targetIds_codec);
       size += damageValues_.CalculateSize(_repeated_damageValues_codec);
+      size += isCritical_.CalculateSize(_repeated_isCritical_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -7484,6 +7504,7 @@ namespace Protocol {
       }
       targetIds_.Add(other.targetIds_);
       damageValues_.Add(other.damageValues_);
+      isCritical_.Add(other.isCritical_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -7517,6 +7538,11 @@ namespace Protocol {
             damageValues_.AddEntriesFrom(input, _repeated_damageValues_codec);
             break;
           }
+          case 34:
+          case 32: {
+            isCritical_.AddEntriesFrom(input, _repeated_isCritical_codec);
+            break;
+          }
         }
       }
     #endif
@@ -7548,6 +7574,11 @@ namespace Protocol {
           case 26:
           case 24: {
             damageValues_.AddEntriesFrom(ref input, _repeated_damageValues_codec);
+            break;
+          }
+          case 34:
+          case 32: {
+            isCritical_.AddEntriesFrom(ref input, _repeated_isCritical_codec);
             break;
           }
         }

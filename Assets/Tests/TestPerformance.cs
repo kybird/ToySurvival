@@ -28,7 +28,7 @@ public class TestPerformance
         _player = new GameObject("RemotePlayer");
         _deadReckoning = _player.AddComponent<global::DeadReckoning>();
         // 초기화 데이터 주입
-        _deadReckoning.UpdateFromServer(0, 0, 1, 0, 0);
+        _deadReckoning.UpdateFromServer(0, 0, 1, 0, false, 0);
     }
 
     [TearDown]
