@@ -100,22 +100,84 @@ namespace Utils
             go.transform.position = worldPos;
 
             var sr = go.AddComponent<SpriteRenderer>();
-            // Note: 프로젝트에 GroundEffect 레이어가 없다면 Default 레이어로 렌더링될 수 있습니다.
-            // 필요시 Tag나 Layer를 동적으로 확인하여 설정할 수 있습니다.
             sr.sortingLayerName = "GroundEffect";
-            sr.sortingOrder = 0; // 바닥에 깔리도록
+            sr.sortingOrder = 0;
 
             var tex = AoETexCache.GetCircleTexture();
             sr.sprite = Sprite.Create(
                 tex,
                 new Rect(0, 0, tex.width, tex.height),
                 new Vector2(0.5f, 0.5f),
-                pixelsPerUnit: tex.width // 텍스처 크기와 동일하게 설정하여 기본 크기를 1x1로 맞춤
+                pixelsPerUnit: tex.width
             );
             sr.color = color;
 
-            // 반경 = 판정 반경 * 2 (지름)
             go.transform.localScale = Vector3.one * (radius * 2f);
+
+            if (duration > 0f)
+            {
+                go.AddComponent<AoELifetime>().Init(duration);
+            }
+
+            return go;
+        }
+
+        public static GameObject DrawArcAoE(
+            Vector2 worldPos,
+            float radius,
+            float arcDegrees,
+            float rotationDegrees,
+            Color color,
+            float duration,
+            Transform parent = null
+        )
+        {
+            GameObject go = new GameObject("ArcAoE_Indicator");
+            if (parent != null)
+                go.transform.SetParent(parent);
+
+            go.transform.position = worldPos;
+            go.transform.rotation = Quaternion.Euler(0, 0, rotationDegrees);
+
+            MeshFilter mf = go.AddComponent<MeshFilter>();
+            MeshRenderer mr = go.AddComponent<MeshRenderer>();
+
+            // Setup Mesh
+            Mesh mesh = new Mesh();
+            int segments = 20;
+            Vector3[] vertices = new Vector3[segments + 2];
+            int[] triangles = new int[segments * 3];
+
+            vertices[0] = Vector3.zero;
+            float angleStep = arcDegrees / segments;
+            float startAngle = -arcDegrees / 2f;
+
+            for (int i = 0; i <= segments; i++)
+            {
+                float angle = (startAngle + (i * angleStep)) * Mathf.Deg2Rad;
+                vertices[i + 1] = new Vector3(
+                    Mathf.Cos(angle) * radius,
+                    Mathf.Sin(angle) * radius,
+                    0
+                );
+
+                if (i < segments)
+                {
+                    triangles[i * 3 + 0] = 0;
+                    triangles[i * 3 + 1] = i + 2;
+                    triangles[i * 3 + 2] = i + 1;
+                }
+            }
+
+            mesh.vertices = vertices;
+            mesh.triangles = triangles;
+            mesh.RecalculateBounds();
+            mf.mesh = mesh;
+
+            // Simple Material
+            mr.material = new Material(Shader.Find("Sprites/Default"));
+            mr.material.color = color;
+            mr.sortingLayerName = "GroundEffect";
 
             if (duration > 0f)
             {

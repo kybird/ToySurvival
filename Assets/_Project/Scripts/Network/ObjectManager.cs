@@ -302,7 +302,7 @@ public class ObjectManager : MonoBehaviour
         }
     }
 
-    public void OnDamage(int targetId, int damage)
+    public void OnDamage(int targetId, int damage, bool isCritical = false)
     {
         if (_objects.TryGetValue(targetId, out GameObject go))
         {
@@ -311,11 +311,9 @@ public class ObjectManager : MonoBehaviour
             if (flash == null)
                 flash = go.AddComponent<SimpleFlash>();
 
-            flash.Flash(Color.red, _flashMaterial, 0.1f);
+            flash.Flash(isCritical ? Color.yellow : Color.red, _flashMaterial, 0.1f);
 
             // 2. Spawn Damage Text
-            // Load "Prefabs/DamageText"
-            // Note: In a real project, cache this prefab or use an object pool.
             GameObject dmgTextObj = _resourceManager.Instantiate("Prefabs/DamageText");
             if (dmgTextObj != null)
             {
@@ -323,45 +321,60 @@ public class ObjectManager : MonoBehaviour
                 DamageText dt = dmgTextObj.GetComponent<DamageText>();
                 if (dt != null)
                 {
-                    dt.Setup(damage);
+                    dt.Setup(damage, isCritical);
                 }
             }
 
-            Debug.Log($"[ObjectManager] Object {targetId} took {damage} damage.");
+            if (isCritical)
+                Debug.Log($"[Critical Hit!!] Object {targetId} took {damage} damage.");
+            else
+                Debug.Log($"[ObjectManager] Object {targetId} took {damage} damage.");
         }
     }
 
-    public void PlaySkillEffect(int skillId, float x, float y, float radius, float duration)
+    public void PlaySkillEffect(
+        int skillId,
+        float x,
+        float y,
+        float radius,
+        float duration,
+        float arcDegrees = 0,
+        float rotationDegrees = 0
+    )
     {
-        // [New] Frost Nova (ID 3) 같이 코드 기반 장판만 필요한 경우 처리
-        if (skillId == 3) // Frost Nova
+        // 1. Frost Nova (ID 3)
+        if (skillId == 3)
         {
             Utils.AoEUtils.DrawAoE(
                 worldPos: new Vector2(x, y),
                 radius: radius,
-                color: new Color(0.4f, 0.7f, 1.0f, 0.5f), // 시원한 하늘색 반투명
+                color: new Color(0.4f, 0.7f, 1.0f, 0.4f),
                 duration: duration
             );
-
-            Debug.Log(
-                $"[ObjectManager] Played circular AoE effect for skill {skillId} at ({x}, {y})"
-            );
-            return; // 프리팹 로드 하지 않음
+            return;
         }
 
-        // 그 외 프리팹이 필요한 스킬들 처리
+        // 2. Greatsword Swipe (ID 4)
+        if (skillId == 4)
+        {
+            Utils.AoEUtils.DrawArcAoE(
+                worldPos: new Vector2(x, y),
+                radius: radius,
+                arcDegrees: arcDegrees,
+                rotationDegrees: rotationDegrees,
+                color: new Color(1.0f, 1.0f, 1.0f, 0.6f),
+                duration: duration
+            );
+            return;
+        }
+
+        // Generic Prefab-based Skill Effect
         string resourcePath = $"Prefabs/SkillEffect_{skillId}";
         GameObject effectObj = _resourceManager.Instantiate(resourcePath);
         if (effectObj != null)
         {
             effectObj.transform.position = new Vector3(x, y, 0);
-            Debug.Log(
-                $"[ObjectManager] Played skill effect {skillId} at ({x}, {y}) (R:{radius}, D:{duration})"
-            );
-        }
-        else
-        {
-            Debug.LogWarning($"[ObjectManager] Failed to load skill effect prefab: {resourcePath}");
+            effectObj.transform.rotation = Quaternion.Euler(0, 0, rotationDegrees);
         }
     }
 

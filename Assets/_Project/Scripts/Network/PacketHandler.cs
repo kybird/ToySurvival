@@ -289,11 +289,12 @@ public class PacketHandler
         {
             int targetId = res.TargetIds[i];
             int damage = res.DamageValues[i];
+            bool isCritical = (i < res.IsCritical.Count) ? res.IsCritical[i] : false;
 
             // ObjectManager를 통해 해당 오브젝트에 데미지 이펙트 출력
             if (ObjectManager.Instance != null)
             {
-                ObjectManager.Instance.OnDamage(targetId, damage);
+                ObjectManager.Instance.OnDamage(targetId, damage, isCritical);
             }
         }
     }
@@ -312,7 +313,9 @@ public class PacketHandler
                 res.X,
                 res.Y,
                 res.Radius,
-                res.DurationSeconds
+                res.DurationSeconds,
+                res.ArcDegrees,
+                res.RotationDegrees
             );
         }
     }
@@ -523,6 +526,13 @@ public class PacketHandler
                 res.Duration,
                 res.ColorHex
             );
+        }
+    public static void Handle_S_UpdateInventory(IMessage packet)
+    {
+        S_UpdateInventory res = (S_UpdateInventory)packet;
+        if (InventoryHUD.Instance != null)
+        {
+            InventoryHUD.Instance.UpdateInventory(res);
         }
     }
 }

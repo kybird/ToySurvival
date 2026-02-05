@@ -110,8 +110,11 @@ namespace Network
             _onRecv.Add((ushort)Protocol.MsgId.SWaveNotify, MakePacket<S_WaveNotify>);
             _handler.Add((ushort)Protocol.MsgId.SWaveNotify, PacketHandler.Handle_S_WaveNotify);
 
-            _onRecv.Add((ushort)Protocol.MsgId.SDebugDrawBox, MakePacket<S_DebugDrawBox>);
-            _handler.Add((ushort)Protocol.MsgId.SDebugDrawBox, PacketHandler.Handle_S_DebugDrawBox);
+            _onRecv.Add((ushort)Protocol.MsgId.SUpdateInventory, MakePacket<S_UpdateInventory>);
+            _handler.Add(
+                (ushort)Protocol.MsgId.SUpdateInventory,
+                PacketHandler.Handle_S_UpdateInventory
+            );
         }
 
         public void OnRecvPacket(ArraySegment<byte> buffer, Action<IMessage> onRecvCallback = null)
