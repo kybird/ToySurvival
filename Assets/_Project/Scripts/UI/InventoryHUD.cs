@@ -43,6 +43,80 @@ public class InventoryHUD : MonoBehaviour
     {
         if (_instance == null)
             _instance = this;
+
+        SetupProceduralUI();
+    }
+
+    private void SetupProceduralUI()
+    {
+        // 1. Canvas 확인 및 자신을 Canvas 밑으로 배치
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas == null)
+        {
+            canvas = FindObjectOfType<Canvas>();
+            if (canvas == null)
+            {
+                GameObject canvasObj = new GameObject("MainCanvas");
+                canvas = canvasObj.AddComponent<Canvas>();
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                canvasObj.AddComponent<CanvasScaler>();
+                canvasObj.AddComponent<GraphicRaycaster>();
+                Debug.Log("[InventoryHUD] MainCanvas를 찾을 수 없어 새로 생성했습니다.");
+            }
+            transform.SetParent(canvas.transform, false);
+        }
+
+        // 2. 인벤토리 HUD 자체의 위치 설정 (상단 배치를 기본으로 함)
+        RectTransform rect = GetComponent<RectTransform>();
+        if (rect == null)
+            rect = gameObject.AddComponent<RectTransform>();
+
+        rect.anchorMin = new Vector2(0, 1);
+        rect.anchorMax = new Vector2(0, 1);
+        rect.pivot = new Vector2(0, 1);
+        rect.anchoredPosition = new Vector2(20, -20);
+        rect.sizeDelta = new Vector2(800, 100);
+
+        // 3. 컨테이너 자동 탐색 및 생성
+        if (_weaponContainer == null)
+            _weaponContainer = CreateContainer("WeaponContainer", new Vector2(0, 0));
+
+        if (_passiveContainer == null)
+            _passiveContainer = CreateContainer("PassiveContainer", new Vector2(0, -50));
+    }
+
+    private RectTransform CreateContainer(string name, Vector2 pos)
+    {
+        Transform t = transform.Find(name);
+        if (t == null)
+        {
+            GameObject obj = new GameObject(name);
+            obj.transform.SetParent(this.transform, false);
+            t = obj.transform;
+        }
+
+        RectTransform rt = t.GetComponent<RectTransform>();
+        if (rt == null)
+            rt = t.gameObject.AddComponent<RectTransform>();
+
+        rt.anchorMin = new Vector2(0, 1);
+        rt.anchorMax = new Vector2(0, 1);
+        rt.pivot = new Vector2(0, 1);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = new Vector2(600, 45);
+
+        HorizontalLayoutGroup layout = t.GetComponent<HorizontalLayoutGroup>();
+        if (layout == null)
+        {
+            layout = t.gameObject.AddComponent<HorizontalLayoutGroup>();
+            layout.childControlWidth = false;
+            layout.childControlHeight = false;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+            layout.spacing = 10;
+        }
+
+        return rt;
     }
 
     /// <summary>
@@ -60,10 +134,25 @@ public class InventoryHUD : MonoBehaviour
             RectTransform container = item.IsPassive ? _passiveContainer : _weaponContainer;
             List<Image> list = item.IsPassive ? _passiveIcons : _weaponIcons;
 
-            if (container == null || _iconPrefab == null)
+            if (container == null)
+            {
+                Debug.LogWarning(
+                    $"[InventoryHUD] {(item.IsPassive ? "Passive" : "Weapon")} 컨테이너가 설정되지 않았습니다."
+                );
                 continue;
+            }
 
-            Image iconImg = Instantiate(_iconPrefab, container);
+            Image iconImg;
+            if (_iconPrefab != null)
+            {
+                iconImg = Instantiate(_iconPrefab, container);
+            }
+            else
+            {
+                // [Procedural] 프리팹이 없는 경우 즉석 생성
+                iconImg = CreateIconObject(container);
+            }
+
             iconImg.sprite = GetIconSprite(item.Id, item.IsPassive);
 
             var text = iconImg.GetComponentInChildren<TMPro.TextMeshProUGUI>();
@@ -78,6 +167,39 @@ public class InventoryHUD : MonoBehaviour
 
             list.Add(iconImg);
         }
+    }
+
+    private Image CreateIconObject(Transform parent)
+    {
+        GameObject obj = new GameObject("Icon");
+        obj.transform.SetParent(parent, false);
+
+        RectTransform rt = obj.AddComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(40, 40);
+
+        Image img = obj.AddComponent<Image>();
+        img.raycastTarget = false;
+
+        // 레벨 텍스트 생성
+        GameObject textObj = new GameObject("LevelText");
+        textObj.transform.SetParent(obj.transform, false);
+
+        RectTransform textRt = textObj.AddComponent<RectTransform>();
+        textRt.anchorMin = new Vector2(0, 0);
+        textRt.anchorMax = new Vector2(1, 0.4f);
+        textRt.offsetMin = Vector2.zero;
+        textRt.offsetMax = Vector2.zero;
+
+        var tmp = textObj.AddComponent<TMPro.TextMeshProUGUI>();
+        tmp.fontSize = 12;
+        tmp.alignment = TMPro.TextAlignmentOptions.BottomRight;
+        tmp.color = Color.white;
+        tmp.raycastTarget = false;
+        // 외곽선 효과 추가 (가시성)
+        tmp.outlineWidth = 0.2f;
+        tmp.outlineColor = Color.black;
+
+        return img;
     }
 
     private void ClearIcons()
@@ -106,27 +228,9 @@ public class InventoryHUD : MonoBehaviour
                 case 2:
                     iconName = "Icon_Heart";
                     break; // Hollow Heart
-                case 3:
-                    iconName = "Icon_Level";
-                    break; // Wings
-                case 4:
-                    iconName = "Icon_Level";
-                    break; // Empty Tome
-                case 5:
-                    iconName = "Icon_Level";
-                    break; // Candelabrador
-                case 6:
-                    iconName = "Icon_Level";
-                    break; // Spellbinder
-                case 7:
-                    iconName = "Icon_Level";
-                    break; // Duplicator
-                case 11:
-                    iconName = "Icon_Level";
-                    break; // Magic Bindi
                 default:
                     iconName = "Icon_Level";
-                    break;
+                    break; // Common fallback
             }
         }
         else
@@ -151,14 +255,13 @@ public class InventoryHUD : MonoBehaviour
             }
         }
 
+        // [C1] 리소스 가이드에 따른 경로 수정 (Assets/_Project/Resources/Textures/)
         Sprite sprite = Resources.Load<Sprite>($"Textures/{iconName}");
-        if (sprite == null)
-            sprite = Resources.Load<Sprite>($"_Project/Resources/Textures/{iconName}");
 
         if (sprite == null)
         {
             Debug.LogWarning(
-                $"[InventoryHUD] 리소스 로드 실패: {iconName} (ID: {id}, Passive: {isPassive})"
+                $"[InventoryHUD] 리소스 로드 실패: Textures/{iconName} (ID: {id}, Passive: {isPassive})"
             );
         }
 

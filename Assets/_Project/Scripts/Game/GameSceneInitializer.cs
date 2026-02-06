@@ -19,6 +19,14 @@ public class GameSceneInitializer : MonoBehaviour
             gridObj.AddComponent<GridVisualizer>();
         }
 
+        // [C2] 인벤토리 HUD 자동 생성 (절차적 생성)
+        if (InventoryHUD.Instance == null)
+        {
+            GameObject hudObj = new GameObject("InventoryHUD");
+            hudObj.AddComponent<InventoryHUD>();
+            Debug.Log("[GameSceneInitializer] InventoryHUD created procedurally.");
+        }
+
         // 이전 게임 오브젝트 정리
         if (ObjectManager.Instance != null)
         {
