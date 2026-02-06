@@ -7,9 +7,9 @@ public class GridVisualizer : MonoBehaviour
 {
     [Header("Settings")]
     public float gridSize = 1.0f;
-    public Color backgroundColor = new Color(0.12f, 0.12f, 0.12f, 1.0f);
-    public Color lineColor = new Color(0.2f, 0.2f, 0.2f, 1.0f);
-    public Color majorLineColor = new Color(0.3f, 0.3f, 0.3f, 1.0f);
+    public Color backgroundColor = new Color(0.45f, 0.47f, 0.5f, 1.0f); // 확연히 밝은 회색 배경
+    public Color lineColor = new Color(0.35f, 0.35f, 0.35f, 1.0f); // 선은 상대적으로 진하게
+    public Color majorLineColor = new Color(0.25f, 0.25f, 0.25f, 1.0f); // 격자 무늬가 뚜렷하게 보이도록
 
     private GameObject _gridObject;
     private Material _gridMaterial;

@@ -66,23 +66,39 @@ public class InventoryHUD : MonoBehaviour
             transform.SetParent(canvas.transform, false);
         }
 
-        // 2. 인벤토리 HUD 자체의 위치 설정 (상단 배치를 기본으로 함)
+        // [Fix] 다른 UI에 가려지지 않도록 UI 계층 구조상 가장 아래로 이동 (Hierarchy 최상단)
+        transform.SetAsLastSibling();
+
+        // 2. 인벤토리 HUD 자체의 위치 설정
         RectTransform rect = GetComponent<RectTransform>();
         if (rect == null)
             rect = gameObject.AddComponent<RectTransform>();
 
         rect.anchorMin = new Vector2(0, 1);
-        rect.anchorMax = new Vector2(0, 1);
+        rect.anchorMax = new Vector2(1, 1); // 가로로 꽉 차게
         rect.pivot = new Vector2(0, 1);
-        rect.anchoredPosition = new Vector2(20, -20);
-        rect.sizeDelta = new Vector2(800, 100);
+        rect.anchoredPosition = new Vector2(20, -100); // UI가 겹치지 않도록 더 아래로
+        rect.sizeDelta = new Vector2(-40, 120);
 
-        // 3. 컨테이너 자동 탐색 및 생성
+        // [Visible Hint] 배경 가시성
+        Image bg = GetComponent<Image>();
+        if (bg == null)
+        {
+            bg = gameObject.AddComponent<Image>();
+            bg.color = new Color(0, 0, 0, 0.4f); // 배경을 좀 더 진하게
+        }
+
+        // 3. 컨테이너 강제 생성
+        EnsureContainers();
+    }
+
+    private void EnsureContainers()
+    {
         if (_weaponContainer == null)
-            _weaponContainer = CreateContainer("WeaponContainer", new Vector2(0, 0));
+            _weaponContainer = CreateContainer("WeaponContainer", new Vector2(0, -5));
 
         if (_passiveContainer == null)
-            _passiveContainer = CreateContainer("PassiveContainer", new Vector2(0, -50));
+            _passiveContainer = CreateContainer("PassiveContainer", new Vector2(0, -55));
     }
 
     private RectTransform CreateContainer(string name, Vector2 pos)
@@ -100,10 +116,10 @@ public class InventoryHUD : MonoBehaviour
             rt = t.gameObject.AddComponent<RectTransform>();
 
         rt.anchorMin = new Vector2(0, 1);
-        rt.anchorMax = new Vector2(0, 1);
+        rt.anchorMax = new Vector2(1, 1); // 컨테이너도 가로 확장
         rt.pivot = new Vector2(0, 1);
         rt.anchoredPosition = pos;
-        rt.sizeDelta = new Vector2(600, 45);
+        rt.sizeDelta = new Vector2(-10, 45);
 
         HorizontalLayoutGroup layout = t.GetComponent<HorizontalLayoutGroup>();
         if (layout == null)
@@ -113,8 +129,13 @@ public class InventoryHUD : MonoBehaviour
             layout.childControlHeight = false;
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
-            layout.spacing = 10;
+            layout.spacing = 15; // 아이콘 간격 넓힘
+            layout.padding = new RectOffset(10, 10, 0, 0);
         }
+
+        // 컨테이너 가시성용 (디버그)
+        // Image img = t.gameObject.GetComponent<Image>();
+        // if (img == null) { img = t.gameObject.AddComponent<Image>(); img.color = new Color(1,1,1,0.05f); }
 
         return rt;
     }
@@ -125,9 +146,15 @@ public class InventoryHUD : MonoBehaviour
     public void UpdateInventory(S_UpdateInventory msg)
     {
         ClearIcons();
+        EnsureContainers(); // 업데이트 직전 다시 한 번 확인
 
-        if (msg == null || msg.Items == null)
+        if (msg == null || msg.Items == null || msg.Items.Count == 0)
+        {
+            Debug.Log("[InventoryHUD] 수신된 인벤토리 아이템이 없습니다.");
             return;
+        }
+
+        Debug.Log($"[InventoryHUD] Updating UI with {msg.Items.Count} items.");
 
         foreach (var item in msg.Items)
         {
@@ -137,7 +164,7 @@ public class InventoryHUD : MonoBehaviour
             if (container == null)
             {
                 Debug.LogWarning(
-                    $"[InventoryHUD] {(item.IsPassive ? "Passive" : "Weapon")} 컨테이너가 설정되지 않았습니다."
+                    $"[InventoryHUD] {(item.IsPassive ? "Passive" : "Weapon")} 컨테이너가 생성되지 않았습니다."
                 );
                 continue;
             }
@@ -175,7 +202,7 @@ public class InventoryHUD : MonoBehaviour
         obj.transform.SetParent(parent, false);
 
         RectTransform rt = obj.AddComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(40, 40);
+        rt.sizeDelta = new Vector2(45, 45); // 아이콘 크기 키움
 
         Image img = obj.AddComponent<Image>();
         img.raycastTarget = false;
@@ -191,12 +218,11 @@ public class InventoryHUD : MonoBehaviour
         textRt.offsetMax = Vector2.zero;
 
         var tmp = textObj.AddComponent<TMPro.TextMeshProUGUI>();
-        tmp.fontSize = 12;
+        tmp.fontSize = 13;
         tmp.alignment = TMPro.TextAlignmentOptions.BottomRight;
-        tmp.color = Color.white;
+        tmp.color = Color.yellow;
         tmp.raycastTarget = false;
-        // 외곽선 효과 추가 (가시성)
-        tmp.outlineWidth = 0.2f;
+        tmp.outlineWidth = 0.3f; // 외곽선 가시성 강화
         tmp.outlineColor = Color.black;
 
         return img;
