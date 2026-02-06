@@ -25,7 +25,9 @@ public class GridVisualizer : MonoBehaviour
         _gridObject = GameObject.CreatePrimitive(PrimitiveType.Plane);
         _gridObject.name = "BackgroundGrid";
         _gridObject.transform.SetParent(this.transform);
-        _gridObject.transform.localPosition = new Vector3(0, -0.1f, 0); // 플레이어보다 살짝 아래
+        // 2D 게임이므로 XY 평면을 바라보도록 회전 (Plane은 기본적으로 XZ 평면)
+        _gridObject.transform.localRotation = Quaternion.Euler(-90, 0, 0);
+        _gridObject.transform.localPosition = new Vector3(0, 0, 10); // 플레이어 뒤쪽 (Z축)
         _gridObject.transform.localScale = new Vector3(100, 1, 100); // 1000m x 1000m
 
         // 2. 콜라이더 제거 (성능 및 충돌 방지)
@@ -63,7 +65,8 @@ public class GridVisualizer : MonoBehaviour
         if (Camera.main != null)
         {
             Vector3 camPos = Camera.main.transform.position;
-            _gridObject.transform.position = new Vector3(camPos.x, -0.1f, camPos.z);
+            // 카메라를 따라다니되, Z축은 고정하여 배경으로 유지
+            _gridObject.transform.position = new Vector3(camPos.x, camPos.y, 10f);
         }
     }
 }
