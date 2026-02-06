@@ -23,7 +23,7 @@ public class ObjectManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
-            // Initialize Flash Material (Optimization)
+            // 피격 시 반짝임(Flash) 효과를 위한 머티리얼 초기화 (최적화)
             Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
             if (shader == null)
                 shader = Shader.Find("Unlit/Color");
@@ -140,7 +140,7 @@ public class ObjectManager : MonoBehaviour
             $"[ObjectManager] Spawning {info.Type}_{info.ObjectId}. MyPlayerId: {myId}, Match: {info.ObjectId == myId}"
         );
 
-        // 내 플레이어인 경우 ClientSidePredictionController 부착 및 카메라 연결
+        // 내 플레이어인 경우 클라이언트 측 예측(CSP) 컨트롤러 부착 및 카메라 연결
         if (info.ObjectId == NetworkManager.Instance.MyPlayerId)
         {
             // CSP 컨트롤러 부착
@@ -208,7 +208,7 @@ public class ObjectManager : MonoBehaviour
             }
         }
 
-        // Initialize HP Bar if exists
+        // HP 바가 존재한다면 초기화
         HpBar hpBar = go.GetComponentInChildren<HpBar>();
         if (hpBar != null)
         {
@@ -220,7 +220,7 @@ public class ObjectManager : MonoBehaviour
     {
         if (_objects.TryGetValue(objectId, out GameObject go))
         {
-            // 1. Flash Effect (Damage Feedback)
+            // 1. 피격 효과 (빨간색 반짝임)
             var flash = go.GetComponent<SimpleFlash>();
             if (flash == null)
                 flash = go.AddComponent<SimpleFlash>();
@@ -313,7 +313,7 @@ public class ObjectManager : MonoBehaviour
 
             flash.Flash(isCritical ? Color.yellow : Color.red, _flashMaterial, 0.1f);
 
-            // 2. Spawn Damage Text
+            // 데미지 텍스트 생성 (실무에서는 오브젝트 풀링 권장)
             GameObject dmgTextObj = _resourceManager.Instantiate("Prefabs/DamageText");
             if (dmgTextObj != null)
             {
@@ -325,10 +325,13 @@ public class ObjectManager : MonoBehaviour
                 }
             }
 
-            if (isCritical)
-                Debug.Log($"[Critical Hit!!] Object {targetId} took {damage} damage.");
-            else
-                Debug.Log($"[ObjectManager] Object {targetId} took {damage} damage.");
+            Debug.Log(
+                $"{(isCritical ? "[Critical] " : "")}[ObjectManager] Object {targetId} took {damage} damage."
+            );
+
+            // [Sound] Play Hit Sound (Fallback if resource missing)
+            if (SoundManager.Instance != null)
+                SoundManager.Instance.Play("Hit");
         }
     }
 
@@ -342,39 +345,35 @@ public class ObjectManager : MonoBehaviour
         float rotationDegrees = 0
     )
     {
-        // 1. Frost Nova (ID 3)
-        if (skillId == 3)
+        // [New] Frost Nova (ID 3) 같이 코드 기반 장판만 필요한 경우 처리
+        if (skillId == 3) // Frost Nova
         {
             Utils.AoEUtils.DrawAoE(
                 worldPos: new Vector2(x, y),
                 radius: radius,
-                color: new Color(0.4f, 0.7f, 1.0f, 0.4f),
+                color: new Color(0.4f, 0.7f, 1.0f, 0.5f), // 시원한 하늘색 반투명
                 duration: duration
             );
-            return;
-        }
 
-        // 2. Greatsword Swipe (ID 4)
-        if (skillId == 4)
-        {
-            Utils.AoEUtils.DrawArcAoE(
-                worldPos: new Vector2(x, y),
-                radius: radius,
-                arcDegrees: arcDegrees,
-                rotationDegrees: rotationDegrees,
-                color: new Color(1.0f, 1.0f, 1.0f, 0.6f),
-                duration: duration
+            Debug.Log(
+                $"[ObjectManager] Played circular AoE effect for skill {skillId} at ({x}, {y})"
             );
-            return;
+            return; // 프리팹 로드 하지 않음
         }
 
-        // Generic Prefab-based Skill Effect
+        // 그 외 프리팹이 필요한 스킬들 처리
         string resourcePath = $"Prefabs/SkillEffect_{skillId}";
         GameObject effectObj = _resourceManager.Instantiate(resourcePath);
         if (effectObj != null)
         {
             effectObj.transform.position = new Vector3(x, y, 0);
-            effectObj.transform.rotation = Quaternion.Euler(0, 0, rotationDegrees);
+            Debug.Log(
+                $"[ObjectManager] Played skill effect {skillId} at ({x}, {y}) (R:{radius}, D:{duration})"
+            );
+        }
+        else
+        {
+            Debug.LogWarning($"[ObjectManager] Failed to load skill effect prefab: {resourcePath}");
         }
     }
 
@@ -438,49 +437,6 @@ public class ObjectManager : MonoBehaviour
             {
                 dr.ForceImpulse(dirX, dirY, force, duration);
             }
-        }
-    }
-
-    public void DrawDebugBox(float x, float y, float w, float h, float duration, uint colorHex)
-    {
-        // 간단한 사각형 그리기 (LineRenderer 이용)
-        GameObject boxObj = new GameObject("DebugBox");
-        boxObj.transform.position = new Vector3(x, y, 0);
-
-        LineRenderer lr = boxObj.AddComponent<LineRenderer>();
-        lr.positionCount = 5;
-        lr.loop = true;
-        lr.useWorldSpace = false;
-        lr.startWidth = 0.1f;
-        lr.endWidth = 0.1f;
-
-        // Material 설정 (Default-Line or Sprites-Default)
-        Shader shader = Shader.Find("Sprites/Default");
-        if (shader != null)
-            lr.material = new Material(shader);
-
-        // Color Parse
-        byte a = (byte)((colorHex >> 24) & 0xFF);
-        byte r = (byte)((colorHex >> 16) & 0xFF);
-        byte g = (byte)((colorHex >> 8) & 0xFF);
-        byte b = (byte)(colorHex & 0xFF);
-        Color c = new Color32(r, g, b, a);
-
-        lr.startColor = c;
-        lr.endColor = c;
-
-        float hw = w * 0.5f;
-        float hh = h * 0.5f;
-
-        lr.SetPosition(0, new Vector3(-hw, -hh, 0));
-        lr.SetPosition(1, new Vector3(-hw, hh, 0));
-        lr.SetPosition(2, new Vector3(hw, hh, 0));
-        lr.SetPosition(3, new Vector3(hw, -hh, 0));
-        lr.SetPosition(4, new Vector3(-hw, -hh, 0)); // Close loop
-
-        if (duration > 0)
-        {
-            Destroy(boxObj, duration);
         }
     }
 

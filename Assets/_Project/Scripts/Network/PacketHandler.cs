@@ -47,7 +47,7 @@ public class PacketHandler
             // GameManager를 통한 상태 전이
             GameManager.Instance.TriggerEvent(StateEvent.LoginSuccess);
 
-            // [Fix] Start Pinging ONLY after Login Success
+            // [수정] 로그인 성공 후에만 핑(Ping) 전송 시작
             NetworkManager.Instance.StartPingCoroutine();
         }
         else
@@ -186,7 +186,7 @@ public class PacketHandler
             $"[PacketHandler] S_SpawnObject received. Total objects: {res.Objects.Count}, ServerTick: {res.ServerTick}"
         );
 
-        // [Tick Sync] 게임 진입 후 첫 스폰 패킷으로 "게임 시간" 앵커링
+        // [틱 동기화] 게임 진입 후 첫 스폰 패킷으로 "게임 시간" 기준점(Anchor) 설정
         if (TickManager.Instance != null && res.ServerTick > 0)
         {
             TickManager.Instance.InitGameAnchor(res.ServerTick);
@@ -317,6 +317,10 @@ public class PacketHandler
                 res.ArcDegrees,
                 res.RotationDegrees
             );
+
+            // [사운드] 스킬 효과음 재생
+            if (SoundManager.Instance != null)
+                SoundManager.Instance.Play($"Skill_{res.SkillId}");
         }
     }
 
@@ -476,6 +480,10 @@ public class PacketHandler
             Debug.Log($"- [{opt.OptionId}] {opt.Name}: {opt.Desc} (New: {opt.IsNew})");
         }
 
+        // [사운드] 레벨업 효과음 재생
+        if (SoundManager.Instance != null)
+            SoundManager.Instance.Play("LevelUp");
+
         float timeout = res.TimeoutSeconds > 0 ? res.TimeoutSeconds : 30f;
 
         if (LevelUpUI.Instance != null)
@@ -513,23 +521,11 @@ public class PacketHandler
         }
     }
 
-    public static void Handle_S_DebugDrawBox(IMessage packet)
-    {
-        S_DebugDrawBox res = (S_DebugDrawBox)packet;
-        if (ObjectManager.Instance != null)
-        {
-            ObjectManager.Instance.DrawDebugBox(
-                res.X,
-                res.Y,
-                res.W,
-                res.H,
-                res.Duration,
-                res.ColorHex
-            );
-        }
     public static void Handle_S_UpdateInventory(IMessage packet)
     {
         S_UpdateInventory res = (S_UpdateInventory)packet;
+        Debug.Log($"[PacketHandler] Update Inventory: {res.Items.Count} items");
+
         if (InventoryHUD.Instance != null)
         {
             InventoryHUD.Instance.UpdateInventory(res);

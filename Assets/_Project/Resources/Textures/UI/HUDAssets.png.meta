@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 81e8a2e0de69d4841ac5f8e7a3a2217e
+guid: c7d3726d2d1004f4288d52e0dbfd058a
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -4879915044568007710
-    second: LobbyBackground_0
+      213: -4557838293517572223
+    second: HUDAssets_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,7 +113,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: LobbyBackground_0
+      name: HUDAssets_0
       rect:
         serializedVersion: 2
         x: 0
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 2eb70723f1f074cb0800000000000000
-      internalID: -4879915044568007710
+      spriteID: 1876633783e4fb0c0800000000000000
+      internalID: -4557838293517572223
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      LobbyBackground_0: -4879915044568007710
+      HUDAssets_0: -4557838293517572223
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

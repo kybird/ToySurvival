@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 81e8a2e0de69d4841ac5f8e7a3a2217e
+guid: 2f54c393c3cb8814994a996a34f6b23e
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -4879915044568007710
-    second: LobbyBackground_0
+      213: 4495478712733764576
+    second: knight_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: LobbyBackground_0
+      name: knight_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 1024
-        height: 1024
+        x: 414
+        y: 140
+        width: 863
+        height: 678
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 2eb70723f1f074cb0800000000000000
-      internalID: -4879915044568007710
+      spriteID: 0eb83d73216236e30800000000000000
+      internalID: 4495478712733764576
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      LobbyBackground_0: -4879915044568007710
+      knight_0: 4495478712733764576
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

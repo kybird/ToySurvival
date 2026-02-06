@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 81e8a2e0de69d4841ac5f8e7a3a2217e
+guid: 0af9e34cea7d60744b67b1f55340c0a1
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -4879915044568007710
-    second: LobbyBackground_0
+      213: 8647823593821616703
+    second: Bat_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,23 +113,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: LobbyBackground_0
+      name: Bat_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 1024
-        height: 1024
+        width: 185
+        height: 100
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 2eb70723f1f074cb0800000000000000
-      internalID: -4879915044568007710
+      spriteID: f3abafd8dbd330870800000000000000
+      internalID: 8647823593821616703
       vertices: []
       indices: 
       edges: []
@@ -138,7 +138,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: c94b79ccb0832a04ab0d71b99247f684
     internalID: 0
     vertices: []
     indices: 
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      LobbyBackground_0: -4879915044568007710
+      Bat_0: 8647823593821616703
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
