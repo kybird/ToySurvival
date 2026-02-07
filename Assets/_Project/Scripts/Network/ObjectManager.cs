@@ -345,8 +345,9 @@ public class ObjectManager : MonoBehaviour
         float rotationDegrees = 0
     )
     {
-        // [New] Frost Nova (ID 3) 같이 코드 기반 장판만 필요한 경우 처리
-        if (skillId == 3) // Frost Nova
+        // [코드 기반 연출] 
+        // 1. Frost Nova (ID 3): 원형 AoE
+        if (skillId == 3)
         {
             Utils.AoEUtils.DrawAoE(
                 worldPos: new Vector2(x, y),
@@ -354,11 +355,21 @@ public class ObjectManager : MonoBehaviour
                 color: new Color(0.4f, 0.7f, 1.0f, 0.5f), // 시원한 하늘색 반투명
                 duration: duration
             );
-
-            Debug.Log(
-                $"[ObjectManager] Played circular AoE effect for skill {skillId} at ({x}, {y})"
+            return;
+        }
+        // 2. Greatsword (ID 4): 부채꼴 Arc AoE
+        else if (skillId == 4 || arcDegrees > 0)
+        {
+            float finalArc = arcDegrees > 0 ? arcDegrees : 30.0f; // 기본값
+            Utils.AoEUtils.DrawArcAoE(
+                worldPos: new Vector2(x, y),
+                radius: radius,
+                arcDegrees: finalArc,
+                rotationDegrees: rotationDegrees,
+                color: new Color(1.0f, 1.0f, 1.0f, 0.6f), // 휘두르기 하얀색 잔상
+                duration: duration > 0 ? duration : 0.3f
             );
-            return; // 프리팹 로드 하지 않음
+            return;
         }
 
         // 그 외 프리팹이 필요한 스킬들 처리
@@ -367,13 +378,24 @@ public class ObjectManager : MonoBehaviour
         if (effectObj != null)
         {
             effectObj.transform.position = new Vector3(x, y, 0);
+            effectObj.transform.rotation = Quaternion.Euler(0, 0, rotationDegrees);
+            // 반지름을 지름으로 변환하여 스케일 적용 (기본 크기가 1x1인 프리팹 기준)
+            effectObj.transform.localScale = Vector3.one * (radius * 2.0f);
+
             Debug.Log(
-                $"[ObjectManager] Played skill effect {skillId} at ({x}, {y}) (R:{radius}, D:{duration})"
+                $"[ObjectManager] Played skill effect {skillId} at ({x}, {y}) (R:{radius}, D:{duration}, Rot:{rotationDegrees})"
             );
         }
         else
         {
-            Debug.LogWarning($"[ObjectManager] Failed to load skill effect prefab: {resourcePath}");
+            // 프리팹이 없으면 기본 원형 이펙트로 대체 (Placeholder)
+            Utils.AoEUtils.DrawAoE(
+                worldPos: new Vector2(x, y),
+                radius: radius,
+                color: new Color(1.0f, 0.5f, 0.0f, 0.3f), // 주황색 경고 구역
+                duration: duration > 0 ? duration : 1.0f
+            );
+            Debug.LogWarning($"[ObjectManager] Missing prefab {resourcePath}, fallback to placeholder AoE.");
         }
     }
 
