@@ -524,11 +524,26 @@ public class PacketHandler
     public static void Handle_S_UpdateInventory(IMessage packet)
     {
         S_UpdateInventory res = (S_UpdateInventory)packet;
-        Debug.Log($"[PacketHandler] Update Inventory: {res.Items.Count} items");
+        Debug.Log(
+            $"[PacketHandler] Update Inventory: Player={res.PlayerId}, Items={res.Items.Count}"
+        );
 
-        if (InventoryHUD.Instance != null)
+        // 1. Local HUD Update (My Player Only)
+        if (res.PlayerId == NetworkManager.Instance.MyPlayerId)
         {
-            InventoryHUD.Instance.UpdateInventory(res);
+            if (InventoryHUD.Instance != null)
+            {
+                InventoryHUD.Instance.UpdateInventory(res);
+            }
+        }
+
+        // 2. Character Visuals Update
+        if (ObjectManager.Instance != null)
+        {
+            ObjectManager.Instance.UpdatePlayerVisuals(
+                res.PlayerId,
+                new List<InventoryItem>(res.Items)
+            );
         }
     }
 }

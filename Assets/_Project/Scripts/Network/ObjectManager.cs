@@ -214,6 +214,57 @@ public class ObjectManager : MonoBehaviour
         {
             hpBar.Init(info.Hp, info.MaxHp);
         }
+
+        // [New] PlayerSkillVisuals 부착 (플레이어 타입인 경우)
+        if (info.Type == ObjectType.Player)
+        {
+            var visuals = go.GetComponent<Visual.Skills.PlayerSkillVisuals>();
+            if (visuals == null)
+            {
+                visuals = go.AddComponent<Visual.Skills.PlayerSkillVisuals>();
+                // 여기서 필요한 자식 오브젝트(Orbit/Aura)를 동적으로 생성하거나 프리팹에서 찾아 연결하는 로직 필요
+                // 실무 구조라면 프리팹에 이미 붙어있을 확률이 높지만, 유연성을 위해 체크
+                EnsurePlayerVisualComponents(visuals);
+            }
+        }
+    }
+
+    private void EnsurePlayerVisualComponents(Visual.Skills.PlayerSkillVisuals visuals)
+    {
+        // OrbitVisual/AuraVisual이 없는 경우 자식 오브젝트로 생성
+        if (visuals.orbitVisual == null)
+        {
+            GameObject orbitObj = new GameObject("OrbitVisual");
+            orbitObj.transform.SetParent(visuals.transform, false);
+            visuals.orbitVisual = orbitObj.AddComponent<Visual.Skills.OrbitVisual>();
+        }
+
+        if (visuals.auraVisual == null)
+        {
+            GameObject auraObj = new GameObject("AuraVisual");
+            auraObj.transform.SetParent(visuals.transform, false);
+            visuals.auraVisual = auraObj.AddComponent<Visual.Skills.AuraVisual>();
+
+            // Aura용 SpriteRenderer (임시 서클)
+            GameObject gfx = new GameObject("Gfx");
+            gfx.transform.SetParent(auraObj.transform, false);
+            var sr = gfx.AddComponent<SpriteRenderer>();
+            sr.sprite = Resources.Load<Sprite>("Textures/Circle"); // Circle 스프라이트가 있다고 가정
+            sr.color = new Color(1, 1, 1, 0.3f);
+            visuals.auraVisual.auraRenderer = sr;
+        }
+    }
+
+    public void UpdatePlayerVisuals(int playerId, List<InventoryItem> items)
+    {
+        if (_objects.TryGetValue(playerId, out GameObject go))
+        {
+            var visuals = go.GetComponent<Visual.Skills.PlayerSkillVisuals>();
+            if (visuals != null)
+            {
+                visuals.Refresh(items);
+            }
+        }
     }
 
     public void UpdateHp(int objectId, float currentHp, float maxHp)
@@ -345,7 +396,7 @@ public class ObjectManager : MonoBehaviour
         float rotationDegrees = 0
     )
     {
-        // [코드 기반 연출] 
+        // [코드 기반 연출]
         // 1. Frost Nova (ID 3): 원형 AoE
         if (skillId == 3)
         {
@@ -395,7 +446,9 @@ public class ObjectManager : MonoBehaviour
                 color: new Color(1.0f, 0.5f, 0.0f, 0.3f), // 주황색 경고 구역
                 duration: duration > 0 ? duration : 1.0f
             );
-            Debug.LogWarning($"[ObjectManager] Missing prefab {resourcePath}, fallback to placeholder AoE.");
+            Debug.LogWarning(
+                $"[ObjectManager] Missing prefab {resourcePath}, fallback to placeholder AoE."
+            );
         }
     }
 
