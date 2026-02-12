@@ -436,10 +436,24 @@ public class PacketHandler
         }
     }
 
+    private static int _lastReceivedExp = -1;
+    private static int _lastLevel = -1;
+
     public static void Handle_S_ExpChange(IMessage packet)
     {
         S_ExpChange res = (S_ExpChange)packet;
-        Debug.Log($"[PacketHandler] Exp Change: {res.CurrentExp}/{res.MaxExp} Lv.{res.Level}");
+
+        // [XP Sync Debug] Check for fluctuating values
+        if (_lastReceivedExp > res.CurrentExp && res.Level == _lastLevel)
+        {
+            Debug.LogWarning(
+                $"[XP] WARNING: Exp value decreased! Previous={_lastReceivedExp}, Current={res.CurrentExp}"
+            );
+        }
+        _lastReceivedExp = res.CurrentExp;
+        _lastLevel = res.Level;
+
+        Debug.Log($"[XP] Handle_S_ExpChange: {res.CurrentExp}/{res.MaxExp} (Lv.{res.Level})");
 
         if (PlayerHUD.Instance != null)
         {

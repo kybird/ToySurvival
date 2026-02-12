@@ -7,7 +7,15 @@ public class ExpGemController : MonoBehaviour
     private float _magnetRadius = 5.0f; // Matches GameConfig.EXP_GEM_MAGNET_RADIUS
     private float _flySpeed = 15.0f; // Matches GameConfig.EXP_GEM_FLY_SPEED
 
-    private void Start() { }
+    private void Start()
+    {
+        // 보석이 항상 유닛(박쥐 등)보다 뒤에 보이도록 정렬 순서 조정
+        var sr = GetComponentInChildren<SpriteRenderer>();
+        if (sr != null)
+        {
+            sr.sortingOrder = -1;
+        }
+    }
 
     public void InitAndFly(Transform target, float speed)
     {

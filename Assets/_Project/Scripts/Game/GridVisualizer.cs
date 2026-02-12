@@ -54,7 +54,9 @@ public class GridVisualizer : MonoBehaviour
         _gridMaterial.SetFloat("_GridSize", gridSize);
         _gridMaterial.SetFloat("_LineWidth", 0.02f);
 
-        _gridObject.GetComponent<MeshRenderer>().sharedMaterial = _gridMaterial;
+        var renderer = _gridObject.GetComponent<MeshRenderer>();
+        renderer.sharedMaterial = _gridMaterial;
+        renderer.sortingOrder = -100; // 배경은 가장 뒤에 위치하도록 설정
     }
 
     void Update()
