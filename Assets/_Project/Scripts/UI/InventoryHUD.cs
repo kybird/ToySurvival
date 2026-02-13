@@ -66,6 +66,14 @@ public class InventoryHUD : MonoBehaviour
             transform.SetParent(canvas.transform, false);
         }
 
+        // [New] Tooltip HUD 자동 생성
+        if (TooltipHUD.Instance == null)
+        {
+            GameObject tooltipObj = new GameObject("TooltipHUD");
+            tooltipObj.transform.SetParent(canvas.transform, false);
+            tooltipObj.AddComponent<TooltipHUD>();
+        }
+
         // [Fix] 다른 UI에 가려지지 않도록 UI 계층 구조상 가장 아래로 이동 (Hierarchy 최상단)
         transform.SetAsLastSibling();
 
@@ -77,8 +85,8 @@ public class InventoryHUD : MonoBehaviour
         rect.anchorMin = new Vector2(0, 1);
         rect.anchorMax = new Vector2(1, 1); // 가로로 꽉 차게
         rect.pivot = new Vector2(0, 1);
-        rect.anchoredPosition = new Vector2(20, -100); // UI가 겹치지 않도록 더 아래로
-        rect.sizeDelta = new Vector2(-40, 120);
+        rect.anchoredPosition = new Vector2(20, -50); // 위치 조정
+        rect.sizeDelta = new Vector2(-40, 80); // 전체 높이 축소 (120 -> 80)
 
         // [Visible Hint] 배경 가시성
         Image bg = GetComponent<Image>();
@@ -98,7 +106,7 @@ public class InventoryHUD : MonoBehaviour
             _weaponContainer = CreateContainer("WeaponContainer", new Vector2(0, -5));
 
         if (_passiveContainer == null)
-            _passiveContainer = CreateContainer("PassiveContainer", new Vector2(0, -55));
+            _passiveContainer = CreateContainer("PassiveContainer", new Vector2(0, -40)); // 간격 좁힘
     }
 
     private RectTransform CreateContainer(string name, Vector2 pos)
@@ -119,7 +127,7 @@ public class InventoryHUD : MonoBehaviour
         rt.anchorMax = new Vector2(1, 1); // 컨테이너도 가로 확장
         rt.pivot = new Vector2(0, 1);
         rt.anchoredPosition = pos;
-        rt.sizeDelta = new Vector2(-10, 45);
+        rt.sizeDelta = new Vector2(-10, 35);
 
         HorizontalLayoutGroup layout = t.GetComponent<HorizontalLayoutGroup>();
         if (layout == null)
@@ -129,8 +137,8 @@ public class InventoryHUD : MonoBehaviour
             layout.childControlHeight = false;
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
-            layout.spacing = 15; // 아이콘 간격 넓힘
-            layout.padding = new RectOffset(10, 10, 0, 0);
+            layout.spacing = 10; // 간격 조정
+            layout.padding = new RectOffset(5, 5, 0, 0);
         }
 
         // 컨테이너 가시성용 (디버그)
@@ -182,6 +190,12 @@ public class InventoryHUD : MonoBehaviour
 
             iconImg.sprite = GetIconSprite(item.Id, item.IsPassive);
 
+            // [New] Tooltip Trigger 부착
+            var trigger = iconImg.gameObject.GetComponent<ItemTooltipTrigger>();
+            if (trigger == null)
+                trigger = iconImg.gameObject.AddComponent<ItemTooltipTrigger>();
+            trigger.Setup($"{GetItemName(item.Id, item.IsPassive)} (Lv.{item.Level})");
+
             var text = iconImg.GetComponentInChildren<TMPro.TextMeshProUGUI>();
             if (text != null)
                 text.text = $"Lv.{item.Level}";
@@ -196,16 +210,28 @@ public class InventoryHUD : MonoBehaviour
         }
     }
 
+    private void ClearIcons()
+    {
+        foreach (var icon in _weaponIcons)
+            if (icon != null)
+                Destroy(icon.gameObject);
+        foreach (var icon in _passiveIcons)
+            if (icon != null)
+                Destroy(icon.gameObject);
+        _weaponIcons.Clear();
+        _passiveIcons.Clear();
+    }
+
     private Image CreateIconObject(Transform parent)
     {
         GameObject obj = new GameObject("Icon");
         obj.transform.SetParent(parent, false);
 
         RectTransform rt = obj.AddComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(45, 45); // 아이콘 크기 키움
+        rt.sizeDelta = new Vector2(32, 32); // 아이콘 크기 축소 (45 -> 32)
 
         Image img = obj.AddComponent<Image>();
-        img.raycastTarget = false;
+        img.raycastTarget = true; // 호버 감지를 위해 활성화
 
         // 레벨 텍스트 생성
         GameObject textObj = new GameObject("LevelText");
@@ -226,18 +252,6 @@ public class InventoryHUD : MonoBehaviour
         tmp.outlineColor = Color.black;
 
         return img;
-    }
-
-    private void ClearIcons()
-    {
-        foreach (var icon in _weaponIcons)
-            if (icon != null)
-                Destroy(icon.gameObject);
-        foreach (var icon in _passiveIcons)
-            if (icon != null)
-                Destroy(icon.gameObject);
-        _weaponIcons.Clear();
-        _passiveIcons.Clear();
     }
 
     private Sprite GetIconSprite(int id, bool isPassive)
@@ -275,22 +289,49 @@ public class InventoryHUD : MonoBehaviour
                 case 4:
                     iconName = "dagger";
                     break; // Greatsword fallback
+                case 7:
+                    iconName = "dagger";
+                    break; // Whip fallback
                 default:
                     iconName = "MagicBolt";
                     break;
             }
         }
 
-        // [C1] 리소스 가이드에 따른 경로 수정 (Assets/_Project/Resources/Textures/)
         Sprite sprite = Resources.Load<Sprite>($"Textures/{iconName}");
-
         if (sprite == null)
         {
             Debug.LogWarning(
                 $"[InventoryHUD] 리소스 로드 실패: Textures/{iconName} (ID: {id}, Passive: {isPassive})"
             );
         }
-
         return sprite;
+    }
+
+    private string GetItemName(int id, bool isPassive)
+    {
+        if (isPassive)
+        {
+            return id switch
+            {
+                1 => "시금치 (공격력 증가)",
+                2 => "할로우 하트 (최대 체력 증가)",
+                _ => $"패시브 아이템 {id}",
+            };
+        }
+        else
+        {
+            return id switch
+            {
+                1 => "단검",
+                2 => "독침",
+                3 => "프로스트 노바",
+                4 => "대검",
+                5 => "성서",
+                6 => "번개 반지",
+                7 => "채찍",
+                _ => $"무기 {id}",
+            };
+        }
     }
 }

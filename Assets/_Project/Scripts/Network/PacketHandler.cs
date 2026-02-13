@@ -315,7 +315,9 @@ public class PacketHandler
                 res.Radius,
                 res.DurationSeconds,
                 res.ArcDegrees,
-                res.RotationDegrees
+                res.RotationDegrees,
+                res.Width,
+                res.Height
             );
 
             // [사운드] 스킬 효과음 재생

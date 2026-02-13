@@ -393,7 +393,9 @@ public class ObjectManager : MonoBehaviour
         float radius,
         float duration,
         float arcDegrees = 0,
-        float rotationDegrees = 0
+        float rotationDegrees = 0,
+        float width = 0,
+        float height = 0
     )
     {
         // [코드 기반 연출]
@@ -430,24 +432,50 @@ public class ObjectManager : MonoBehaviour
         {
             effectObj.transform.position = new Vector3(x, y, 0);
             effectObj.transform.rotation = Quaternion.Euler(0, 0, rotationDegrees);
-            // 반지름을 지름으로 변환하여 스케일 적용 (기본 크기가 1x1인 프리팹 기준)
-            effectObj.transform.localScale = Vector3.one * (radius * 2.0f);
+
+            // [Data-Driven Scaling]
+            if (skillId == 7 && width > 0 && height > 0)
+            {
+                // 채찍(Whip): 서버에서 계산된 OBB 크기로 스케일링
+                // 프리팹이 1x1 크기 Sprite 기반이라고 가정
+                effectObj.transform.localScale = new Vector3(height, width, 1);
+            }
+            else
+            {
+                // 일반 스킬: 반지름을 지름으로 변환하여 등방성 스케일 적용
+                effectObj.transform.localScale = Vector3.one * (radius * 2.0f);
+            }
 
             Debug.Log(
-                $"[ObjectManager] Played skill effect {skillId} at ({x}, {y}) (R:{radius}, D:{duration}, Rot:{rotationDegrees})"
+                $"[ObjectManager] Played skill effect {skillId} at ({x}, {y}) (R:{radius}, W:{width}, H:{height}, Rot:{rotationDegrees})"
             );
         }
         else
         {
-            // 프리팹이 없으면 기본 원형 이펙트로 대체 (Placeholder)
-            Utils.AoEUtils.DrawAoE(
-                worldPos: new Vector2(x, y),
-                radius: radius,
-                color: new Color(1.0f, 0.5f, 0.0f, 0.3f), // 주황색 경고 구역
-                duration: duration > 0 ? duration : 1.0f
-            );
+            // 프리팹이 없으면 기본 원형 또는 사각형 이펙트로 대체 (Placeholder)
+            if (skillId == 7)
+            {
+                // 채찍 Placeholder (사각형 궤적 연출)
+                Utils.AoEUtils.DrawRectAoE(
+                    worldPos: new Vector2(x, y),
+                    width: width,
+                    height: height,
+                    rotationDegrees: rotationDegrees,
+                    color: new Color(1.0f, 1.0f, 1.0f, 0.5f), // 흰색 반투명 궤적
+                    duration: duration > 0 ? duration : 0.2f
+                );
+            }
+            else
+            {
+                Utils.AoEUtils.DrawAoE(
+                    worldPos: new Vector2(x, y),
+                    radius: radius,
+                    color: new Color(1.0f, 0.5f, 0.0f, 0.3f), // 주황색 경고 구역
+                    duration: duration > 0 ? duration : 1.0f
+                );
+            }
             Debug.LogWarning(
-                $"[ObjectManager] Missing prefab {resourcePath}, fallback to placeholder AoE."
+                $"[ObjectManager] Missing prefab {resourcePath}, fallback applied for skill {skillId}."
             );
         }
     }

@@ -41,6 +41,27 @@ namespace Utils
             _circleTex.Apply();
             return _circleTex;
         }
+
+        private static Texture2D _rectTex;
+
+        public static Texture2D GetRectTexture()
+        {
+            if (_rectTex != null)
+                return _rectTex;
+
+            const int size = 64;
+            _rectTex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            _rectTex.wrapMode = TextureWrapMode.Clamp;
+
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                _rectTex.SetPixel(x, y, Color.white);
+            }
+
+            _rectTex.Apply();
+            return _rectTex;
+        }
     }
 
     public class AoELifetime : MonoBehaviour
@@ -178,6 +199,47 @@ namespace Utils
             mr.material = new Material(Shader.Find("Sprites/Default"));
             mr.material.color = color;
             mr.sortingLayerName = "GroundEffect";
+
+            if (duration > 0f)
+            {
+                go.AddComponent<AoELifetime>().Init(duration);
+            }
+
+            return go;
+        }
+
+        public static GameObject DrawRectAoE(
+            Vector2 worldPos,
+            float width,
+            float height,
+            float rotationDegrees,
+            Color color,
+            float duration,
+            Transform parent = null
+        )
+        {
+            GameObject go = new GameObject("RectAoE_Indicator");
+            if (parent != null)
+                go.transform.SetParent(parent);
+
+            go.transform.position = worldPos;
+            go.transform.rotation = Quaternion.Euler(0, 0, rotationDegrees);
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sortingLayerName = "GroundEffect";
+            sr.sortingOrder = 0;
+
+            var tex = AoETexCache.GetRectTexture();
+            sr.sprite = Sprite.Create(
+                tex,
+                new Rect(0, 0, tex.width, tex.height),
+                new Vector2(0.5f, 0.5f),
+                pixelsPerUnit: tex.width
+            );
+            sr.color = color;
+
+            // SpriteRenderer 스케일 설정 (기본 1x1 텍스처 기준)
+            go.transform.localScale = new Vector3(height, width, 1);
 
             if (duration > 0f)
             {
