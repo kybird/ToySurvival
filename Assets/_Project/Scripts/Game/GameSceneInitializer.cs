@@ -19,13 +19,20 @@ public class GameSceneInitializer : MonoBehaviour
             gridObj.AddComponent<GridVisualizer>();
         }
 
-        // [C2] 인벤토리 HUD 자동 생성 (절차적 생성)
-        if (InventoryHUD.Instance == null)
+        // [C2] 인벤토리 HUD 정리 후 생성
+        // 기존 InventoryHUD 파괴 (static 참조도 클리어됨)
+        var existingHUDs = FindObjectsOfType<InventoryHUD>();
+        foreach (var hud in existingHUDs)
         {
-            GameObject hudObj = new GameObject("InventoryHUD");
-            hudObj.AddComponent<InventoryHUD>();
-            Debug.Log("[GameSceneInitializer] InventoryHUD created procedurally.");
+            Destroy(hud.gameObject);
         }
+        
+        GameObject hudObj = new GameObject("InventoryHUD");
+        hudObj.AddComponent<InventoryHUD>();
+        Debug.Log("[GameSceneInitializer] InventoryHUD created procedurally.");
+        
+        // [Fix] 생성 직후 pending 데이터가 있으면 즉시 적용 (타이밍 문제 해결)
+        // AddComponent가 실행되면 Awake()가 호출되는데, 그 안에서 pending 처리됨
 
         // 이전 게임 오브젝트 정리
         if (ObjectManager.Instance != null)

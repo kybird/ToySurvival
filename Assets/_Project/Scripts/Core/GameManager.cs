@@ -146,6 +146,13 @@ public class GameManager : MonoBehaviour
 
             GameState oldState = CurrentState;
 
+            // [Fix] InGame -> Login 전이 시 인벤토리 HUD 클리어
+            if (CurrentState == GameState.InGame && 
+                (transition.NextState == GameState.Login || transition.NextState == GameState.Lobby))
+            {
+                ClearInventoryHUD();
+            }
+
             // 씬 전환이 필요한 경우
             if (!string.IsNullOrEmpty(transition.SceneName))
             {
@@ -164,6 +171,20 @@ public class GameManager : MonoBehaviour
         {
             Debug.LogWarning($"[GameManager] Invalid Transition: {CurrentState} --[{evt}]--> ???");
             return false;
+        }
+    }
+
+    /// <summary>
+    /// 인벤토리 HUD를 클리어하고 숨깁니다.
+    /// 게임 종료 또는 연결 끊김 시 호출됩니다.
+    /// </summary>
+    private void ClearInventoryHUD()
+    {
+        var inventoryHUD = InventoryHUD.Instance;
+        if (inventoryHUD != null)
+        {
+            inventoryHUD.ClearAndHide();
+            Debug.Log("[GameManager] InventoryHUD cleared and hidden due to state transition");
         }
     }
 

@@ -544,13 +544,21 @@ public class PacketHandler
             $"[PacketHandler] Update Inventory: Player={res.PlayerId}, Items={res.Items.Count}"
         );
 
+        // [Debug] MyPlayerId 확인
+        int myId = NetworkManager.Instance != null ? NetworkManager.Instance.MyPlayerId : -1;
+        Debug.Log($"[PacketHandler] MyPlayerId={myId}, PacketPlayerId={res.PlayerId}, Match={res.PlayerId == myId}");
+
         // 1. Local HUD Update (My Player Only)
-        if (res.PlayerId == NetworkManager.Instance.MyPlayerId)
+        if (res.PlayerId == myId)
         {
-            if (InventoryHUD.Instance != null)
-            {
-                InventoryHUD.Instance.UpdateInventory(res);
-            }
+            Debug.Log($"[PacketHandler] PlayerId matches! Using OnInventoryPacketReceived...");
+            
+            // [Fix] 정적 메서드 사용 - HUD가 준비되지 않았으면 대기 목록에 저장
+            InventoryHUD.OnInventoryPacketReceived(res);
+        }
+        else
+        {
+            Debug.LogWarning($"[PacketHandler] PlayerId mismatch - ignoring inventory update");
         }
 
         // 2. Character Visuals Update

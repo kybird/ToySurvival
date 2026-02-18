@@ -16,7 +16,14 @@ public class InventoryHUD : MonoBehaviour
         {
             if (_instance == null)
             {
-                _instance = FindObjectOfType<InventoryHUD>();
+                // [Fix] 비활성화된 오브젝트도 찾도록 수정
+                // FindObjectOfType은 활성화된 오브젝트만 찾으므로
+                var allHUDs = Resources.FindObjectsOfTypeAll<InventoryHUD>();
+                if (allHUDs.Length > 0)
+                {
+                    _instance = allHUDs[0];
+                }
+                
                 if (_instance == null)
                 {
                     Debug.LogWarning("[InventoryHUD] 씬에 인벤토리 HUD가 배치되어 있지 않습니다.");
@@ -39,12 +46,35 @@ public class InventoryHUD : MonoBehaviour
     private List<Image> _weaponIcons = new List<Image>();
     private List<Image> _passiveIcons = new List<Image>();
 
+    // [Fix] 패킷이 HUD 준비 전에 도착하면 임시 저장
+    private static S_UpdateInventory _pendingInventory = null;
+
     private void Awake()
     {
-        if (_instance == null)
-            _instance = this;
+        // [Fix] pending 데이터를 가장 먼저 확보
+        S_UpdateInventory pendingData = _pendingInventory;
+        _pendingInventory = null;
+        
+        // [Fix] 무조건 새 인스턴스로 설정 (이전 파괴된 인스턴스 무시)
+        _instance = this;
 
         SetupProceduralUI();
+        
+        // [Fix] 대기 중인 인벤토리 데이터가 있으면 적용
+        if (pendingData != null)
+        {
+            Debug.Log($"[InventoryHUD] Applying pending inventory data ({pendingData.Items.Count} items)");
+            UpdateInventory(pendingData);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // [Fix] 파괴될 때 static 참조 클리어
+        if (_instance == this)
+        {
+            _instance = null;
+        }
     }
 
     private void SetupProceduralUI()
@@ -66,7 +96,7 @@ public class InventoryHUD : MonoBehaviour
             transform.SetParent(canvas.transform, false);
         }
 
-        // [New] Tooltip HUD 자동 생성
+        // Tooltip HUD 자동 생성
         if (TooltipHUD.Instance == null)
         {
             GameObject tooltipObj = new GameObject("TooltipHUD");
@@ -220,6 +250,60 @@ public class InventoryHUD : MonoBehaviour
                 Destroy(icon.gameObject);
         _weaponIcons.Clear();
         _passiveIcons.Clear();
+    }
+
+    /// <summary>
+    /// 인벤토리 HUD 패널을 숨기거나 표시합니다.
+    /// 로그인 화면으로 돌아갈 때 호출되어야 합니다.
+    /// </summary>
+    public void SetVisible(bool visible)
+    {
+        gameObject.SetActive(visible);
+        Debug.Log($"[InventoryHUD] SetVisible({visible}) called");
+    }
+
+    /// <summary>
+    /// 인벤토리 데이터를 완전히 클리어하고 패널을 숨깁니다.
+    /// 서버 연결 끊김 시 호출되어야 합니다.
+    /// </summary>
+    public void ClearAndHide()
+    {
+        ClearIcons();
+        SetVisible(false);
+        _pendingInventory = null; // [Fix] 대기 데이터도 클리어
+        Debug.Log("[InventoryHUD] ClearAndHide() called - inventory cleared and hidden");
+    }
+
+    /// <summary>
+    /// [Fix] 패킷 수신 시 호출 - HUD가 준비되면 즉시 업데이트, 아니면 대기
+    /// </summary>
+    public static void OnInventoryPacketReceived(S_UpdateInventory msg)
+    {
+        // [Fix] try-catch로 안전하게 파괴된 인스턴스 체크
+        bool instanceValid = false;
+        try
+        {
+            instanceValid = _instance != null && _instance.gameObject != null && _instance.gameObject.activeInHierarchy;
+        }
+        catch (System.Exception)
+        {
+            // 파괴된 인스턴스에 접근하면 예외 발생
+            _instance = null;
+        }
+        
+        if (instanceValid)
+        {
+            // HUD가 준비됨 - 즉시 업데이트
+            Debug.Log($"[InventoryHUD] Instance ready, updating inventory directly");
+            _instance.UpdateInventory(msg);
+        }
+        else
+        {
+            // HUD가 아직 없음 - 대기 목록에 저장
+            Debug.Log($"[InventoryHUD] Instance not ready, storing pending inventory ({msg.Items.Count} items)");
+            _pendingInventory = msg;
+            _instance = null; // [Fix] 파괴된 인스턴스 참조 클리어
+        }
     }
 
     private Image CreateIconObject(Transform parent)
