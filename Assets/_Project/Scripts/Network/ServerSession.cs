@@ -37,6 +37,7 @@ namespace Network
                 key = cipher;
             }
 
+            // 패킷 매니저로 전달
             PacketManager.Instance.OnRecvPacket(new ArraySegment<byte>(recvBuffer));
         }
 
@@ -49,9 +50,6 @@ namespace Network
             string name = packet.Descriptor.Name.Replace("_", "");
             if (!Enum.TryParse(typeof(Protocol.MsgId), name, true, out object msgIdObj))
             {
-                UnityEngine.Debug.LogError(
-                    $"[ServerSession] MsgId 매핑 실패: '{name}' (원본: {packet.Descriptor.Name})"
-                );
                 return;
             }
 

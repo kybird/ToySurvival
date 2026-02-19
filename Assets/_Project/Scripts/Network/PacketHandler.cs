@@ -49,6 +49,12 @@ public class PacketHandler
 
             // [수정] 로그인 성공 후에만 핑(Ping) 전송 시작
             NetworkManager.Instance.StartPingCoroutine();
+
+            // [New] 로비 입장 요청 (C_EnterLobby 전송)
+            // 서버는 C_EnterLobby를 받아야 해당 세션을 로비 Room에 입장시키고 S_RoomList 등을 전송할 준비를 합니다.
+            C_EnterLobby enterLobby = new C_EnterLobby();
+            NetworkManager.Instance.Send(enterLobby);
+            Debug.Log("[PacketHandler] Sent C_EnterLobby to Server.");
         }
         else
         {
