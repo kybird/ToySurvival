@@ -24,46 +24,52 @@ namespace Network
 
         public override void OnRecvPacket(ArraySegment<byte> buffer)
         {
-            // Decrypt packet (Simple XOR-CBC Feedback)
-            byte[] data = buffer.Array;
-            int offset = buffer.Offset;
-            int count = buffer.Count;
+            // [수신] 원본 버퍼는 공유 RecvBuffer를 가리키므로 복사 후 복호화
+            byte[] recvBuffer = new byte[buffer.Count];
+            Buffer.BlockCopy(buffer.Array, buffer.Offset, recvBuffer, 0, buffer.Count);
 
-            // Skip first 4 bytes (Header: Size + ID) to allow server to parse packet size
+            // XOR-CBC 복호화, 헤더 4바이트 스킵
             byte key = 0xA5;
-            for (int i = 4; i < count; i++)
+            for (int i = 4; i < recvBuffer.Length; i++)
             {
-                byte cipher = data[offset + i];
-                byte plain = (byte)(cipher ^ key);
-                data[offset + i] = plain;
+                byte cipher = recvBuffer[i];
+                recvBuffer[i] = (byte)(cipher ^ key);
                 key = cipher;
             }
 
-            // Push to queue for main thread processing
-            PacketManager.Instance.OnRecvPacket(buffer);
+            PacketManager.Instance.OnRecvPacket(new ArraySegment<byte>(recvBuffer));
         }
 
         public override void OnSend(int numOfBytes) { }
 
         public void Send(IMessage packet)
         {
+            // Protobuf 클래스명 -> MsgId Enum 변환
+            // 예: C_GetRoomList -> CGetRoomList -> MsgId.CGetRoomList
             string name = packet.Descriptor.Name.Replace("_", "");
-            Protocol.MsgId msgId = (Protocol.MsgId)Enum.Parse(typeof(Protocol.MsgId), name, true);
-            ushort id = (ushort)msgId;
+            if (!Enum.TryParse(typeof(Protocol.MsgId), name, true, out object msgIdObj))
+            {
+                UnityEngine.Debug.LogError(
+                    $"[ServerSession] MsgId 매핑 실패: '{name}' (원본: {packet.Descriptor.Name})"
+                );
+                return;
+            }
 
-            // [DEBUG] Log Packet Sent
-            UnityEngine.Debug.Log(
-                $"[Client] Sending Packet: {packet.Descriptor.Name} -> MappedName: {name} -> ID: {id}"
-            );
+            ushort id = (ushort)(Protocol.MsgId)msgIdObj;
 
-            ushort size = (ushort)packet.CalculateSize();
-            byte[] sendBuffer = new byte[size + 4];
-            Array.Copy(BitConverter.GetBytes((ushort)(size + 4)), 0, sendBuffer, 0, 2);
+            // 바디를 안전하게 직렬화 후 복사
+            byte[] body = packet.ToByteArray();
+            ushort totalSize = (ushort)(4 + body.Length);
+            byte[] sendBuffer = new byte[totalSize];
+
+            // 헤더 기록 (Plain)
+            Array.Copy(BitConverter.GetBytes(totalSize), 0, sendBuffer, 0, 2);
             Array.Copy(BitConverter.GetBytes(id), 0, sendBuffer, 2, 2);
-            packet.WriteTo(new ArraySegment<byte>(sendBuffer, 4, size));
 
-            // Encrypt packet (Simple XOR-CBC Feedback)
-            // Skip first 4 bytes (Header: Size + ID) to allow server to parse packet size
+            // 바디 복사
+            Array.Copy(body, 0, sendBuffer, 4, body.Length);
+
+            // XOR-CBC 암호화, 헤더 4바이트 스킵
             byte key = 0xA5;
             for (int i = 4; i < sendBuffer.Length; i++)
             {

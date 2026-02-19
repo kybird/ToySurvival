@@ -122,7 +122,7 @@ namespace Network
             ushort size = BitConverter.ToUInt16(buffer.Array, buffer.Offset);
             ushort id = BitConverter.ToUInt16(buffer.Array, buffer.Offset + 2);
 
-            // UnityEngine.Debug.Log($"[PacketManager] OnRecvPacket - ID: {id}, Size: {size}");
+            UnityEngine.Debug.Log($"[PacketManager] OnRecvPacket - ID: {id}, Size: {size}");
 
             Action<ArraySegment<byte>, ushort> action = null;
             if (_onRecv.TryGetValue(id, out action))

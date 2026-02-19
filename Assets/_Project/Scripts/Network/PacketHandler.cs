@@ -76,20 +76,29 @@ public class PacketHandler
 
     public static void Handle_S_RoomList(IMessage packet)
     {
-        // 상태 체크 (Lobby에서만 처리)
+        Debug.Log("[PacketHandler] S_GetRoomList received");
+
+        // 상태 체크 (Lobby 또는 Loading에서 처리 가능)
         if (
             GameManager.Instance != null
             && !GameManager.Instance.IsPacketAllowed(
                 (int)MsgId.SRoomList,
-                new[] { GameState.Lobby }
+                new[] { GameState.Lobby, GameState.Loading }
             )
         )
         {
+            Debug.Log("[PacketHandler] S_GetRoomList ignored - invalid state");
             return;
         }
 
         S_RoomList res = (S_RoomList)packet;
         Debug.Log($"[PacketHandler] Received Room List. Count: {res.Rooms.Count}");
+        foreach (var room in res.Rooms)
+        {
+            Debug.Log(
+                $"[PacketHandler] Room - ID: {room.RoomId}, Title: {room.RoomTitle}, Players: {room.CurrentPlayers}/{room.MaxPlayers}, IsPlaying: {room.IsPlaying}"
+            );
+        }
 
         if (LobbyUI.Instance != null)
         {
@@ -546,13 +555,15 @@ public class PacketHandler
 
         // [Debug] MyPlayerId 확인
         int myId = NetworkManager.Instance != null ? NetworkManager.Instance.MyPlayerId : -1;
-        Debug.Log($"[PacketHandler] MyPlayerId={myId}, PacketPlayerId={res.PlayerId}, Match={res.PlayerId == myId}");
+        Debug.Log(
+            $"[PacketHandler] MyPlayerId={myId}, PacketPlayerId={res.PlayerId}, Match={res.PlayerId == myId}"
+        );
 
         // 1. Local HUD Update (My Player Only)
         if (res.PlayerId == myId)
         {
             Debug.Log($"[PacketHandler] PlayerId matches! Using OnInventoryPacketReceived...");
-            
+
             // [Fix] 정적 메서드 사용 - HUD가 준비되지 않았으면 대기 목록에 저장
             InventoryHUD.OnInventoryPacketReceived(res);
         }

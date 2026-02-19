@@ -156,13 +156,15 @@ public class LobbyUI : MonoBehaviour
 
     public void SendGetRoomList()
     {
+        Debug.Log("[LobbyUI] SendGetRoomList called - sending C_GetRoomList request");
+        
         // 갱신 시 선택 초기화
-        _selectedRoomId = -1; 
+        _selectedRoomId = -1;
         
         C_GetRoomList req = new C_GetRoomList();
         req.OnlyJoinable = false;
         NetworkManager.Instance.Send(req);
-        // Debug.Log("[LobbyUI] Sent C_GetRoomList");
+        Debug.Log("[LobbyUI] C_GetRoomList sent successfully");
     }
 
     public void SendCreateRoom()
