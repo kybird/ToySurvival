@@ -23,7 +23,7 @@ public class InventoryHUD : MonoBehaviour
                 {
                     _instance = allHUDs[0];
                 }
-                
+
                 if (_instance == null)
                 {
                     Debug.LogWarning("[InventoryHUD] 씬에 인벤토리 HUD가 배치되어 있지 않습니다.");
@@ -54,16 +54,18 @@ public class InventoryHUD : MonoBehaviour
         // [Fix] pending 데이터를 가장 먼저 확보
         S_UpdateInventory pendingData = _pendingInventory;
         _pendingInventory = null;
-        
+
         // [Fix] 무조건 새 인스턴스로 설정 (이전 파괴된 인스턴스 무시)
         _instance = this;
 
         SetupProceduralUI();
-        
+
         // [Fix] 대기 중인 인벤토리 데이터가 있으면 적용
         if (pendingData != null)
         {
-            Debug.Log($"[InventoryHUD] Applying pending inventory data ({pendingData.Items.Count} items)");
+            Debug.Log(
+                $"[InventoryHUD] Applying pending inventory data ({pendingData.Items.Count} items)"
+            );
             UpdateInventory(pendingData);
         }
     }
@@ -141,17 +143,10 @@ public class InventoryHUD : MonoBehaviour
 
     private RectTransform CreateContainer(string name, Vector2 pos)
     {
-        Transform t = transform.Find(name);
-        if (t == null)
-        {
-            GameObject obj = new GameObject(name);
-            obj.transform.SetParent(this.transform, false);
-            t = obj.transform;
-        }
+        GameObject obj = new GameObject(name, typeof(RectTransform));
+        obj.transform.SetParent(this.transform, false);
 
-        RectTransform rt = t.GetComponent<RectTransform>();
-        if (rt == null)
-            rt = t.gameObject.AddComponent<RectTransform>();
+        RectTransform rt = obj.GetComponent<RectTransform>();
 
         rt.anchorMin = new Vector2(0, 1);
         rt.anchorMax = new Vector2(1, 1); // 컨테이너도 가로 확장
@@ -159,21 +154,13 @@ public class InventoryHUD : MonoBehaviour
         rt.anchoredPosition = pos;
         rt.sizeDelta = new Vector2(-10, 35);
 
-        HorizontalLayoutGroup layout = t.GetComponent<HorizontalLayoutGroup>();
-        if (layout == null)
-        {
-            layout = t.gameObject.AddComponent<HorizontalLayoutGroup>();
-            layout.childControlWidth = false;
-            layout.childControlHeight = false;
-            layout.childForceExpandWidth = false;
-            layout.childForceExpandHeight = false;
-            layout.spacing = 10; // 간격 조정
-            layout.padding = new RectOffset(5, 5, 0, 0);
-        }
-
-        // 컨테이너 가시성용 (디버그)
-        // Image img = t.gameObject.GetComponent<Image>();
-        // if (img == null) { img = t.gameObject.AddComponent<Image>(); img.color = new Color(1,1,1,0.05f); }
+        HorizontalLayoutGroup layout = obj.AddComponent<HorizontalLayoutGroup>();
+        layout.childControlWidth = false;
+        layout.childControlHeight = false;
+        layout.childForceExpandWidth = false;
+        layout.childForceExpandHeight = false;
+        layout.spacing = 10; // 간격 조정
+        layout.padding = new RectOffset(5, 5, 0, 0);
 
         return rt;
     }
@@ -283,14 +270,17 @@ public class InventoryHUD : MonoBehaviour
         bool instanceValid = false;
         try
         {
-            instanceValid = _instance != null && _instance.gameObject != null && _instance.gameObject.activeInHierarchy;
+            instanceValid =
+                _instance != null
+                && _instance.gameObject != null
+                && _instance.gameObject.activeInHierarchy;
         }
         catch (System.Exception)
         {
             // 파괴된 인스턴스에 접근하면 예외 발생
             _instance = null;
         }
-        
+
         if (instanceValid)
         {
             // HUD가 준비됨 - 즉시 업데이트
@@ -300,7 +290,9 @@ public class InventoryHUD : MonoBehaviour
         else
         {
             // HUD가 아직 없음 - 대기 목록에 저장
-            Debug.Log($"[InventoryHUD] Instance not ready, storing pending inventory ({msg.Items.Count} items)");
+            Debug.Log(
+                $"[InventoryHUD] Instance not ready, storing pending inventory ({msg.Items.Count} items)"
+            );
             _pendingInventory = msg;
             _instance = null; // [Fix] 파괴된 인스턴스 참조 클리어
         }

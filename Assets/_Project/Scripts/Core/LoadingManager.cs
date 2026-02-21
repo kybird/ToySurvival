@@ -10,10 +10,14 @@ public class LoadingManager : MonoBehaviour
     public static LoadingManager Instance { get; private set; }
 
     [Header("UI References")]
-    [SerializeField] private GameObject loadingPanel;
-    [SerializeField] private Text messageText;
-    [SerializeField] private Slider progressBar;
+    [SerializeField]
+    private GameObject loadingPanel;
 
+    [SerializeField]
+    private Text messageText;
+
+    [SerializeField]
+    private Slider progressBar;
 
     void Awake()
     {
@@ -21,13 +25,13 @@ public class LoadingManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            
+
             // 동적 생성 시 UI 생성
             if (loadingPanel == null)
             {
                 CreateLoadingUI();
             }
-            
+
             Hide();
         }
         else
@@ -41,22 +45,23 @@ public class LoadingManager : MonoBehaviour
     /// </summary>
     private void CreateLoadingUI()
     {
-
         // Canvas 생성
         GameObject canvasGO = new GameObject("LoadingCanvas");
         canvasGO.transform.SetParent(transform);
-        
+
         Canvas canvas = canvasGO.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 999; // 최상단
 
-        canvasGO.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        canvasGO.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler
+            .ScaleMode
+            .ScaleWithScreenSize;
         canvasGO.AddComponent<GraphicRaycaster>();
 
         // 패널 (배경)
         loadingPanel = new GameObject("LoadingPanel");
         loadingPanel.transform.SetParent(canvasGO.transform, false);
-        
+
         RectTransform panelRect = loadingPanel.AddComponent<RectTransform>();
         panelRect.anchorMin = Vector2.zero;
         panelRect.anchorMax = Vector2.one;
@@ -69,7 +74,7 @@ public class LoadingManager : MonoBehaviour
         // 메시지 텍스트
         GameObject textGO = new GameObject("MessageText");
         textGO.transform.SetParent(loadingPanel.transform, false);
-        
+
         RectTransform textRect = textGO.AddComponent<RectTransform>();
         textRect.anchorMin = new Vector2(0.5f, 0.55f);
         textRect.anchorMax = new Vector2(0.5f, 0.55f);
@@ -85,7 +90,7 @@ public class LoadingManager : MonoBehaviour
         // 프로그레스 바
         GameObject sliderGO = new GameObject("ProgressBar");
         sliderGO.transform.SetParent(loadingPanel.transform, false);
-        
+
         RectTransform sliderRect = sliderGO.AddComponent<RectTransform>();
         sliderRect.anchorMin = new Vector2(0.5f, 0.45f);
         sliderRect.anchorMax = new Vector2(0.5f, 0.45f);
