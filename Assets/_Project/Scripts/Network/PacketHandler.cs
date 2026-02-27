@@ -17,8 +17,6 @@ public class PacketHandler
 
             // 정보 저장
             NetworkManager.Instance.MyPlayerId = res.MyPlayerId;
-            NetworkManager.Instance.MapWidth = res.MapWidth;
-            NetworkManager.Instance.MapHeight = res.MapHeight;
 
             Debug.Log($"[PacketHandler] MyPlayerId SET to: {NetworkManager.Instance.MyPlayerId}");
 

@@ -1,9 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Linq;
 using Core;
 using Network;
 using Protocol;
@@ -29,9 +29,6 @@ public class NetworkManager : MonoBehaviour
         get { return _session != null && _session.IsConnected(); }
     }
     public int MyPlayerId { get; set; }
-    public float MapWidth { get; set; }
-
-    public float MapHeight { get; set; }
 
     // 서버에서 S_Login으로 받아올 Tick 설정 (기본값은 GameConstants 사용)
     public int ServerTickRate { get; set; } = GameConstants.DEFAULT_TICK_RATE;
@@ -195,7 +192,9 @@ public class NetworkManager : MonoBehaviour
         _isConnecting = false;
         _isRetrying = false;
 
-        Debug.Log($"[NetworkManager] OnConnected has {(OnConnected != null ? "subscribers" : "NO subscribers")}");
+        Debug.Log(
+            $"[NetworkManager] OnConnected has {(OnConnected != null ? "subscribers" : "NO subscribers")}"
+        );
         OnConnected?.Invoke();
 
         // [Fix] 직접 LoginUI를 찾아서 갱신 (현재 활성 씬만 검색)
@@ -204,7 +203,9 @@ public class NetworkManager : MonoBehaviour
         LoginUI[] loginUIs = GameObject.FindObjectsOfType<LoginUI>(true);
 
         // [Debug] 모든 로드된 씬과 찾은 LoginUI 로깅
-        Debug.Log($"[NetworkManager] ActiveScene: '{activeScene.name}' (loaded={activeScene.isLoaded})");
+        Debug.Log(
+            $"[NetworkManager] ActiveScene: '{activeScene.name}' (loaded={activeScene.isLoaded})"
+        );
         for (int i = 0; i < SceneManager.sceneCount; i++)
         {
             Scene s = SceneManager.GetSceneAt(i);
@@ -213,7 +214,9 @@ public class NetworkManager : MonoBehaviour
         Debug.Log($"[NetworkManager] Found {loginUIs.Length} LoginUI(s)");
         foreach (var ui in loginUIs)
         {
-            Debug.Log($"[NetworkManager]   - LoginUI on GameObject '{ui.gameObject.name}', scene='{ui.gameObject.scene.name}', activeInHierarchy={ui.gameObject.activeInHierarchy}");
+            Debug.Log(
+                $"[NetworkManager]   - LoginUI on GameObject '{ui.gameObject.name}', scene='{ui.gameObject.scene.name}', activeInHierarchy={ui.gameObject.activeInHierarchy}"
+            );
         }
 
         LoginUI loginUI = null;
@@ -229,7 +232,9 @@ public class NetworkManager : MonoBehaviour
         if (loginUI != null)
         {
             loginUI.UpdateStatusText();
-            Debug.Log($"[NetworkManager] Directly updated LoginUI status. IsConnected={IsConnected}, UI on '{loginUI.gameObject.name}'");
+            Debug.Log(
+                $"[NetworkManager] Directly updated LoginUI status. IsConnected={IsConnected}, UI on '{loginUI.gameObject.name}'"
+            );
         }
         else
         {
@@ -247,7 +252,9 @@ public class NetworkManager : MonoBehaviour
         // IsConnected is now dynamic property
         _isConnecting = false;
 
-        Debug.Log($"[NetworkManager] OnDisconnected has {(OnDisconnected != null ? "subscribers" : "NO subscribers")}");
+        Debug.Log(
+            $"[NetworkManager] OnDisconnected has {(OnDisconnected != null ? "subscribers" : "NO subscribers")}"
+        );
         OnDisconnected?.Invoke();
 
         // [Fix] 직접 LoginUI를 찾아서 갱신 (현재 활성 씬만 검색)
@@ -256,7 +263,9 @@ public class NetworkManager : MonoBehaviour
         LoginUI[] loginUIs = GameObject.FindObjectsOfType<LoginUI>(true);
 
         // [Debug] 모든 로드된 씬과 찾은 LoginUI 로깅
-        Debug.Log($"[NetworkManager] ActiveScene: '{activeScene.name}' (loaded={activeScene.isLoaded})");
+        Debug.Log(
+            $"[NetworkManager] ActiveScene: '{activeScene.name}' (loaded={activeScene.isLoaded})"
+        );
         for (int i = 0; i < SceneManager.sceneCount; i++)
         {
             Scene s = SceneManager.GetSceneAt(i);
@@ -265,7 +274,9 @@ public class NetworkManager : MonoBehaviour
         Debug.Log($"[NetworkManager] Found {loginUIs.Length} LoginUI(s)");
         foreach (var ui in loginUIs)
         {
-            Debug.Log($"[NetworkManager]   - LoginUI on GameObject '{ui.gameObject.name}', scene='{ui.gameObject.scene.name}', activeInHierarchy={ui.gameObject.activeInHierarchy}");
+            Debug.Log(
+                $"[NetworkManager]   - LoginUI on GameObject '{ui.gameObject.name}', scene='{ui.gameObject.scene.name}', activeInHierarchy={ui.gameObject.activeInHierarchy}"
+            );
         }
 
         LoginUI loginUI = null;
@@ -281,7 +292,9 @@ public class NetworkManager : MonoBehaviour
         if (loginUI != null)
         {
             loginUI.UpdateStatusText();
-            Debug.Log($"[NetworkManager] Directly updated LoginUI status. IsConnected={IsConnected}, UI on '{loginUI.gameObject.name}'");
+            Debug.Log(
+                $"[NetworkManager] Directly updated LoginUI status. IsConnected={IsConnected}, UI on '{loginUI.gameObject.name}'"
+            );
         }
         else
         {
@@ -323,7 +336,10 @@ public class NetworkManager : MonoBehaviour
         while (IsConnected)
         {
             // Do NOT send ping if we are in Login state (unauthenticated)
-            if (GameManager.Instance != null && GameManager.Instance.CurrentState != GameState.Login)
+            if (
+                GameManager.Instance != null
+                && GameManager.Instance.CurrentState != GameState.Login
+            )
             {
                 SendPing();
             }
